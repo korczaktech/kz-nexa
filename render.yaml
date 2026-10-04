@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: NexaAPI
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build --workspace=@kz-nexa/api
+    startCommand: npm run start --workspace=@kz-nexa/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_DB_NAME
+        value: KZNexa
+      - key: CONTAS_DB_NAME
+        value: Contas
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false

@@ -1,0 +1,1 @@
+{"name":"@kz-nexa/desktop","version":"0.1.0","private":true,"main":"src/main.cjs","scripts":{"start":"electron .","typecheck":"node --check src/main.cjs"},"devDependencies":{"electron":"^35.0.0"}}

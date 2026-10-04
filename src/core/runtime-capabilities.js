@@ -1,2 +1,0 @@
-export function getRuntimeCapabilities(){return Object.freeze({secureContext:globalThis.isSecureContext===true,webWorker:typeof Worker==="function",transferableArrayBuffer:typeof ArrayBuffer==="function",webgl2Supported:typeof document!=="undefined"&&!!document.createElement("canvas").getContext("webgl2")});}
-export function assertProductionRuntime(){const c=getRuntimeCapabilities();if(!c.secureContext)throw new Error("WebLords: produção exige contexto seguro (HTTPS).");if(!c.webWorker)throw new Error("WebLords: o navegador não disponibiliza Web Worker.");return c;}

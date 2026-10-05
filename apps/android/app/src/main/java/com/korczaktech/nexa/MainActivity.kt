@@ -7,8 +7,38 @@ private data class Validation(var type:String,var values:List<String> = emptyLis
 private data class Sheet(val id:String=UUID.randomUUID().toString(),var name:String,var cells:MutableMap<String,Cell> = mutableMapOf(),var frozenRows:Int=0,var frozenCols:Int=0,var hiddenRows:MutableSet<Int> = mutableSetOf(),var hiddenCols:MutableSet<Int> = mutableSetOf(),var merged:MutableSet<String> = mutableSetOf(),var rules:MutableList<Rule> = mutableListOf(),var validations:MutableMap<String,Validation> = mutableMapOf(),var groupedRows:MutableSet<Int> = mutableSetOf(),var groupedCols:MutableSet<Int> = mutableSetOf())
 private data class Book(var id:String?=null,var name:String="Nova planilha",var sheets:MutableList<Sheet>,var active:Int=0)
 class MainActivity:Activity(){
- private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid
- override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load()}
+ private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION="0.2.0"
+ override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();checkForUpdate()}
+ private fun checkForUpdate(){
+  Thread{try{
+   val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection
+   c.requestMethod="GET";c.setRequestProperty("Accept","application/vnd.github+json");c.connectTimeout=8000;c.readTimeout=10000
+   if(c.responseCode !in 200..299)return@Thread
+   val j=JSONObject(c.inputStream.bufferedReader().use{it.readText()});val tag=j.optString("tag_name").removePrefix("v")
+   val assets=j.optJSONArray("assets");var apk:String?=null
+   if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").lowercase().endsWith(".apk")){apk=a.optString("browser_download_url");break}}
+   if(apk.isNullOrBlank()||!isNewer(tag,APP_VERSION))return@Thread
+   runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
+  }catch(_:Exception){}}.start()
+ }
+ private fun isNewer(remote:String,current:String):Boolean{
+  val a=remote.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();val b=current.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();while(a.size<4)a.add(0);while(b.size<4)b.add(0);
+  for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i];return false
+ }
+ private fun downloadUpdate(url:String,tag:String){
+  Toast.makeText(this,"Baixando Nexa $tag...",Toast.LENGTH_LONG).show()
+  Thread{try{
+   val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
+   val rq=android.app.DownloadManager.Request(Uri.parse(url)).setTitle("Korczak Nexa $tag").setDescription("Atualização do aplicativo").setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setMimeType("application/vnd.android.package-archive").setDestinationInExternalFilesDir(this,android.os.Environment.DIRECTORY_DOWNLOADS,"korczak-nexa-$tag.apk")
+   val id=dm.enqueue(rq);android.os.Handler(mainLooper).post(object:Runnable{override fun run(){
+    val q=dm.query(android.app.DownloadManager.Query().setFilterById(id));if(!q.moveToFirst()){q.close();android.os.Handler(mainLooper).postDelayed(this,1000);return}
+    val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));q.close()
+    if(status==android.app.DownloadManager.STATUS_SUCCESSFUL){val uri=dm.getUriForDownloadedFile(id);if(uri!=null)startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION));return}
+    if(status==android.app.DownloadManager.STATUS_FAILED){Toast.makeText(this@MainActivity,"Falha ao baixar a atualização.",Toast.LENGTH_LONG).show();return}
+    android.os.Handler(mainLooper).postDelayed(this,1000)
+   }})
+  }catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha ao iniciar atualização.",Toast.LENGTH_LONG).show()}}}.start()
+ }
  private fun login(){root.removeAllViews();val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.setPadding(48,64,48,48);l.setBackgroundColor(Color.rgb(6,16,11));val t=TextView(this);t.text="Korczak Nexa";t.textSize=30f;t.setTextColor(Color.WHITE);l.addView(t);val e=EditText(this);e.hint="Email";l.addView(e);val p=EditText(this);p.hint="Senha";p.inputType=129;l.addView(p);val err=TextView(this);err.setTextColor(Color.RED);l.addView(err);val bt=Button(this);bt.text="Entrar";l.addView(bt);root.addView(l);bt.setOnClickListener{Thread{try{val r=req("/v1/auth/login","POST",JSONObject().put("email",e.text.toString()).put("password",p.text.toString()).toString(),null);if(r.first !in 200..299)throw Exception(JSONObject(r.second).optString("message","Falha no login"));val j=JSONObject(r.second);token=j.getString("token");uid=j.getJSONObject("user").getString("id");getPreferences(0).edit().putString("token",token).putString("uid",uid).apply();runOnUiThread{load()}}catch(x:Exception){runOnUiThread{err.text=x.message;bt.isEnabled=true}}}.start()}}
  private fun load(){Thread{try{val r=req("/v1/workbooks","GET",null,token);val a=JSONArray(r.second);book=if(a.length()>0)from(a.getJSONObject(0))else Book(sheets=mutableListOf(Sheet(name="Planilha 1")));runOnUiThread{editor()}}catch(x:Exception){runOnUiThread{Toast.makeText(this,"Falha ao carregar",Toast.LENGTH_LONG).show();login()}}}.start()}
  private fun editor(){root.removeAllViews();val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;val bar=LinearLayout(this);fun b(s:String,f:()->Unit){Button(this).also{x->x.text=s;x.setOnClickListener{f()};bar.addView(x)}};b("Salvar"){save()};b("Nexa Completo"){phase2()};b("↶"){undo()};b("↷"){redo()};b("+ Aba"){addSheet()};b("Mesclar"){merge()};b("Desmesclar"){unmerge()};b("Congelar"){freeze()};b("Ocultar"){hide()};b("Mostrar"){show()};b("Zoom +"){grid.zoom*=1.15f;grid.invalidate()};b("Zoom -"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};b("B"){toggle("b")};b("I"){toggle("i")};b("U"){toggle("u")};b("S"){toggle("s")};b("←"){align(0)};b("↔"){align(1)};b("→"){align(2)};b("Tamanho"){fontSize()};b("Quebra"){wrap()};b("Bordas"){border()};b("Condicional"){conditional()};b("Validação"){validation()};b("Agrupar linha"){groupRow()};b("Agrupar coluna"){groupCol()};b("Grupos +/-"){toggleGroups()};b("Número"){numberFormat()};b("Preencher"){fill()};b("Copiar"){copy()};b("Colar"){paste()};b("Importar"){importFile()};b("Exportar"){exportFile()};b("Sair"){getPreferences(0).edit().clear().apply();token=null;login()};l.addView(bar);grid=Grid();l.addView(grid,LinearLayout.LayoutParams(-1,0,1f));root.addView(l)}

@@ -1,1 +1,18 @@
-{"name":"Korczak Nexa","short_name":"Nexa","start_url":"/","display":"standalone","background_color":"#06100b","theme_color":"#19c37d","lang":"pt-BR","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "name": "Korczak Nexa",
+  "short_name": "Nexa",
+  "start_url": "/kz-nexa/",
+  "scope": "/kz-nexa/",
+  "display": "standalone",
+  "background_color": "#06100b",
+  "theme_color": "#19c37d",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/kz-nexa/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

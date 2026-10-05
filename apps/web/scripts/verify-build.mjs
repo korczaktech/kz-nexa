@@ -1,0 +1,1 @@
+import{access,readFile}from"node:fs/promises";for(const p of ["dist/index.html","dist/manifest.webmanifest"]){await access(p)}const html=await readFile("dist/index.html","utf8");if(!html.includes("Korczak Nexa"))throw Error("dist/index.html inválido");console.log("Web build verification: OK");

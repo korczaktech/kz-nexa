@@ -1,0 +1,10 @@
+import assert from"node:assert/strict";import{evaluateFormula}from"../src/formula.js";import{cellKey,columnIndex,columnName,expandRange,formatNumber,parseCsv,shiftFormulaReferences}from"../src/spreadsheet.js";
+const cells:Record<string,string>={A1:"10",A2:"20",A3:"30",B1:"2"};const other:Record<string,string>={A1:"5",A2:"7"};const get=(s:string|undefined,k:string)=>s==="Outra"?other:cells;
+assert.equal(cellKey(0,0),"A1");assert.equal(columnName(27),"AB");assert.equal(columnIndex("AB"),27);assert.deepEqual(expandRange("B2","C3"),["B2","C2","B3","C3"]);
+assert.deepEqual(parseCsv('a,"b,c","d""e"\n1,2,3'),[["a","b,c",'d"e'],["1","2","3"]]);assert.match(formatNumber(1234.5,"currency"),/R\$/);assert.match(formatNumber(.25,"percent"),/%/);
+assert.equal(evaluateFormula("=A1+B1*2",get,"Planilha 1").value,14);assert.equal(evaluateFormula("=SUM(A1:A3)",get,"Planilha 1").value,60);assert.equal(evaluateFormula("='Outra'!A1+Outra!A2",get,"Planilha 1").value,12);
+const dependent:Record<string,string>={A1:"10",A2:"=A1*2",A3:"=A2+5"};const dg=(s:string|undefined,k:string)=>dependent[k];assert.equal(evaluateFormula("=A3",dg,"Planilha 1").value,25);assert.equal(evaluateFormula("=SUM(A1:A3)",dg,"Planilha 1").value,55);
+const cyc:Record<string,string>={A1:"=A2",A2:"=A1"};assert.equal(evaluateFormula("=A1",(s,k)=>cyc[k!],"Planilha 1").value,"#CIRC!");
+assert.equal(evaluateFormula("=COUNT(A1:A3)",(s,k)=>({A1:"1",A2:"texto",A3:"0"} as any)[k!],"Planilha 1").value,2);
+assert.equal(shiftFormulaReferences("=A1+B$2+$C3+$D$4",1,2),"=C2+D$2+$C4+$D$4");assert.equal(evaluateFormula("=A1+",get).value,"#ERROR!");
+console.log("Shared Phase 1 verification: OK");process.exit(0);

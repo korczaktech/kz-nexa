@@ -13,6 +13,14 @@ private class MatrixSplashView(context: android.content.Context) : View(context)
     private val heads = mutableListOf<Float>()
     private var running = true
 
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!running) return
+            invalidate()
+            postDelayed(this, 38)
+        }
+    }
+
     init {
         paint.typeface = Typeface.MONOSPACE
         repeat(34) {
@@ -20,14 +28,6 @@ private class MatrixSplashView(context: android.content.Context) : View(context)
             heads.add(-random.nextInt(900).toFloat())
         }
         post(tick)
-    }
-
-    private val tick = object : Runnable {
-        override fun run() {
-            if (!running) return
-            invalidate()
-            postDelayed(this, 38)
-        }
     }
 
     override fun onDetachedFromWindow() {

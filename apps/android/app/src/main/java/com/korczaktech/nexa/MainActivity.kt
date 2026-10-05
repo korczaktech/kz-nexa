@@ -21,53 +21,39 @@ class MainActivity:Activity(){
   updateCheckRunning=true
   Thread{
    var retry=false
-   var remoteTag=""
-   var downloadUrl=""
    try{
-    val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=30").openConnection() as HttpURLConnection)
+    val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection)
     conn.requestMethod="GET"
     conn.setRequestProperty("Accept","application/vnd.github+json")
     conn.setRequestProperty("User-Agent","Korczak-Nexa/$APP_VERSION")
-    conn.connectTimeout=12000
-    conn.readTimeout=20000
+    conn.connectTimeout=10000
+    conn.readTimeout=15000
     val code=conn.responseCode
     if(code !in 200..299)throw IOException("GitHub HTTP $code")
     val body=conn.inputStream.bufferedReader().use{it.readText()}
     conn.disconnect()
-    val releases=JSONArray(body)
-    var bestNumber=-1
-    for(i in 0 until releases.length()){
-     val r=releases.getJSONObject(i)
-     if(r.optBoolean("draft")||r.optBoolean("prerelease"))continue
-     val tag=r.optString("tag_name").removePrefix("v").trim()
-     val number=Regex("^0\\.0\\.0\\.(\\d+)$").matchEntire(tag)?.groupValues?.getOrNull(1)?.toIntOrNull()?:continue
-     if(number>bestNumber){bestNumber=number;remoteTag=tag}
-    }
-    if(remoteTag.isBlank())throw IOException("Nenhuma release válida")
-    val release=releases.getJSONObject((0 until releases.length()).firstOrNull{i->
-     val r=releases.getJSONObject(i)
-     !r.optBoolean("draft")&&!r.optBoolean("prerelease")&&r.optString("tag_name").removePrefix("v").trim()==remoteTag
-    }?:throw IOException("Release não encontrada"))
+    val release=JSONObject(body)
+    if(release.optBoolean("draft")||release.optBoolean("prerelease"))throw IOException("Release inválida")
+    val tag=release.optString("tag_name").removePrefix("v").trim()
+    if(!Regex("^0\\.0\\.0\\.(\\d+)$").matches(tag))throw IOException("Versão inválida")
     val assets=release.optJSONArray("assets")?:throw IOException("Assets ausentes")
-    for(j in 0 until assets.length()){
-     val a=assets.getJSONObject(j)
-     if(a.optString("name").equals("Korczak-HUB-Nexa-$remoteTag.apk",true)){
+    var downloadUrl=""
+    for(i in 0 until assets.length()){
+     val a=assets.getJSONObject(i)
+     if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",true)&&a.optString("state","uploaded")=="uploaded"){
       downloadUrl=a.optString("browser_download_url");break
      }
     }
-    if(downloadUrl.isBlank())throw IOException("APK da release não encontrado")
-    if(isNewer(remoteTag,APP_VERSION)){
-     val finalTag=remoteTag
-     val finalUrl=downloadUrl
+    if(downloadUrl.isBlank())throw IOException("APK da release ainda não disponível")
+    if(isNewer(tag,APP_VERSION)){
      runOnUiThread{
-      if(isFinishing||isDestroyed)return@runOnUiThread
-      showUpdateDialog(finalTag,finalUrl)
+      if(!isFinishing&&!isDestroyed)showUpdateDialog(tag,downloadUrl)
      }
     }
    }catch(_:Exception){retry=true}
    finally{
     updateCheckRunning=false
-    if(retry)updateHandler.postDelayed({checkForUpdate()},4000)
+    if(retry)updateHandler.postDelayed({checkForUpdate()},15000)
    }
   }.start()
  }

@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "npm run dev --workspace=@kz-nexa/web",
     "dev:api": "npm run dev --workspace=@kz-nexa/api",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@kz-nexa/shared && npm run build --workspace=@kz-nexa/api && npm run build --workspace=@kz-nexa/web && npm run build --workspace=@kz-nexa/desktop",
     "test": "npm run test --workspace=@kz-nexa/api && npm run test --workspace=@kz-nexa/shared && npm run test --workspace=@kz-nexa/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"

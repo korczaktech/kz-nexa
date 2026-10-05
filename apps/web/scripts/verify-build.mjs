@@ -6,7 +6,7 @@ if(!html.includes("/kz-nexa/"))throw Error("GitHub Pages base path ausente");
 const manifest=JSON.parse(await readFile("dist/manifest.webmanifest","utf8"));
 if(manifest.start_url!=="/kz-nexa/"||manifest.scope!=="/kz-nexa/"||manifest.icons?.[0]?.src!=="/kz-nexa/icon.svg")throw Error("PWA manifest fora do base path");
 const sw=await readFile("dist/sw.js","utf8");
-if(!sw.includes('const BASE = "/kz-nexa/"'))throw Error("Service worker fora do base path");
+if(!sw.includes('new URL("./", self.registration.scope).pathname')||!sw.includes("pathname.startsWith(BASE)"))throw Error("Service worker fora do base path");
 const app=await readFile("src/App.tsx","utf8");
 for(const x of ["navigator.clipboard","shiftFormulaReferences","conditionalRules","validationRules","frozenRows","frozenColumns","mergedRanges","xlsx","decimalPlaces"])if(!app.includes(x))throw Error("Web Phase 1 missing: "+x);
 console.log("Web build and GitHub Pages verification: OK");

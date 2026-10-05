@@ -58,27 +58,53 @@ private class MatrixSplashView(context: android.content.Context) : View(context)
         val cx = w / 2f
         val cy = h * 0.40f
         paint.style = Paint.Style.STROKE
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeJoin = Paint.Join.ROUND
+        paint.strokeWidth = dp(4).toFloat()
+        paint.color = Color.rgb(91, 120, 103)
+        val back = Path()
+        back.moveTo(cx - dp(52), cy - dp(55))
+        back.lineTo(cx + dp(15), cy - dp(78))
+        back.lineTo(cx + dp(40), cy - dp(8))
+        back.lineTo(cx - dp(28), cy + dp(15))
+        back.close()
+        canvas.drawPath(back, paint)
+
+        paint.strokeWidth = dp(4).toFloat()
+        paint.color = Color.WHITE
+        val sheet = Path()
+        sheet.moveTo(cx - dp(58), cy - dp(42))
+        sheet.lineTo(cx + dp(8), cy - dp(65))
+        sheet.lineTo(cx + dp(31), cy + dp(2))
+        sheet.lineTo(cx - dp(35), cy + dp(26))
+        sheet.close()
+        canvas.drawPath(sheet, paint)
+
+        paint.strokeWidth = dp(8).toFloat()
+        paint.color = Color.rgb(105, 255, 154)
+        val data = Path()
+        data.moveTo(cx - dp(28), cy + dp(18))
+        data.lineTo(cx - dp(13), cy - dp(22))
+        data.lineTo(cx + dp(2), cy + dp(8))
+        data.lineTo(cx + dp(24), cy - dp(38))
+        canvas.drawPath(data, paint)
+
+        paint.style = Paint.Style.FILL
+        paint.color = Color.rgb(105, 255, 154)
+        canvas.drawCircle(cx - dp(28), cy + dp(18), dp(4).toFloat(), paint)
+        canvas.drawCircle(cx - dp(13), cy - dp(22), dp(4).toFloat(), paint)
+        canvas.drawCircle(cx + dp(2), cy + dp(8), dp(4).toFloat(), paint)
+        canvas.drawCircle(cx + dp(24), cy - dp(38), dp(4).toFloat(), paint)
+
+        paint.style = Paint.Style.STROKE
         paint.strokeWidth = dp(3).toFloat()
         paint.color = Color.WHITE
-        paint.alpha = 238
-        canvas.drawRoundRect(cx - dp(92), cy - dp(92), cx + dp(92), cy + dp(92), dp(22).toFloat(), dp(22).toFloat(), paint)
-        canvas.drawLine(cx - dp(31), cy - dp(92), cx - dp(31), cy + dp(92), paint)
-        canvas.drawLine(cx + dp(31), cy - dp(92), cx + dp(31), cy + dp(92), paint)
-        canvas.drawLine(cx - dp(92), cy - dp(31), cx + dp(92), cy - dp(31), paint)
-        canvas.drawLine(cx - dp(92), cy + dp(31), cx + dp(92), cy + dp(31), paint)
-
-        paint.color = Color.rgb(105, 255, 154)
-        paint.strokeWidth = dp(7).toFloat()
-        val chart = Path()
-        chart.moveTo(cx - dp(75), cy + dp(50))
-        chart.lineTo(cx - dp(35), cy + dp(10))
-        chart.lineTo(cx, cy + dp(34))
-        chart.lineTo(cx + dp(42), cy - dp(24))
-        chart.lineTo(cx + dp(75), cy - dp(2))
-        canvas.drawPath(chart, paint)
+        val arrow = Path()
+        arrow.moveTo(cx + dp(32), cy - dp(54))
+        arrow.lineTo(cx + dp(47), cy - dp(51))
+        arrow.lineTo(cx + dp(42), cy - dp(36))
+        canvas.drawPath(arrow, paint)
         paint.style = Paint.Style.FILL
-    }
-
     private fun dp(value: Int): Int = ((value * resources.displayMetrics.density) + 0.5f).toInt()
 }
 class MainActivity:Activity(){

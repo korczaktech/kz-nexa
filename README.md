@@ -174,7 +174,7 @@ O Nexa não será construído como um simples clone. Excel e Sheets são referê
 O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 
 ## Status inicial
-**Fase atual:** Fase 0 — Fundação  
+**Fase atual:** Fase 1 — Núcleo (implementação em validação)  
 **Produto:** Korczak Nexa  
 **Idioma:** Português do Brasil  
 **Orçamento:** R$ 0  
@@ -183,6 +183,4 @@ O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 **Infraestrutura:** GitHub Pages + Render + MongoDB Atlas  
 **Plataformas:** Desktop App + Desktop Web + iOS PWA + Android PWA + Android Nativo
 
-<!-- CI verification -->
 
-<!-- verify -->

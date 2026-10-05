@@ -120,6 +120,24 @@ class MainActivity:Activity(){
     if(!v.startsWith("=")){val n=v.replace(",",".").toDoubleOrNull();return if(n!=null&&s.cells.values.any{it.input==v&&it.numberFormat!="general"})n.toString()else v}
     return try{eval(v.substring(1),s,mutableSetOf())}catch(_:Exception){"#ERROR!"}
    }
+   private fun eval(e0:String,s:Sheet,seen:MutableSet<String>):String{
+    val e=e0.trim();if(e.startsWith("(")&&e.endsWith(")"))return eval(e.substring(1,e.length-1),s,seen)
+    val sr=Regex("^(?:'([^']+)'|([A-Za-z0-9_ ]+))!([A-Z]+[0-9]+)$").find(e)
+    if(sr!=null){val ts=book!!.sheets.firstOrNull{x->x.name==(sr.groupValues[1].ifBlank{sr.groupValues[2]})}?:return "0";val rk=sr.groupValues[3];if(!seen.add(ts.id+"!"+rk))return "#CIRC!";val rv=ts.cells[rk]?.input?:"";return if(rv.startsWith("="))eval(rv.substring(1),ts,seen)else rv}
+    val m=Regex("(?i)^(SUM|AVERAGE|MIN|MAX|COUNT)\\((.+)\\)$").find(e)
+    if(m!=null){val vs=m.groupValues[2].split(":").flatMap{x->vals(x,s,seen)}.mapNotNull{x->x.toDoubleOrNull()};return when(m.groupValues[1].uppercase()){"SUM"->vs.sum();"AVERAGE"->if(vs.isEmpty())0.0 else vs.average();"MIN"->vs.minOrNull()?:0.0;"MAX"->vs.maxOrNull()?:0.0;else->vs.size.toDouble()}.toString()}
+    if(e.contains("+"))return e.split("+").sumOf{x->eval(x,s,seen).toDouble()}.toString()
+    if(e.contains("*"))return e.split("*").fold(1.0){a,x->a*eval(x,s,seen).toDouble()}.toString()
+    if(e.contains("/"))return (eval(e.substringBefore("/"),s,seen).toDouble()/eval(e.substringAfter("/"),s,seen).toDouble()).toString()
+    e.replace(",",".").toDoubleOrNull()?.let{return it.toString()}
+    if(s.cells.containsKey(e)){if(!seen.add(e))return "#CIRC!";val v=s.cells[e]!!.input;return if(v.startsWith("="))eval(v.substring(1),s,seen)else v}
+    return "0"
+   }
+   private fun vals(x:String,s:Sheet,seen:MutableSet<String>):List<String>{
+    if(!x.contains(":"))return listOf(eval(x,s,seen));val q=x.split(":");val a=parse(q[0]);val b=parse(q[1]);val out=mutableListOf<String>()
+    for(r in minOf(a.first,b.first)..maxOf(a.first,b.first))for(k in minOf(a.second,b.second)..maxOf(a.second,b.second))out.add(eval(key(r,k),s,seen))
+    return out
+   }
   private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
   override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;if(e.action==MotionEvent.ACTION_DOWN){selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};if(e.action==MotionEvent.ACTION_MOVE){selEnd=locR(y);selColEnd=locC(x);invalidate();return true};if(e.action==MotionEvent.ACTION_UP){if(y>=head)edit(selStart,selColStart);return true};return true}
   private fun locR(y:Float):Int{var z=head;for(r in 0 until 200){if(book!!.sheets[book!!.active].hiddenRows.contains(r))continue;if(y>=z&&y<z+rh)return r;z+=rh};return 199}

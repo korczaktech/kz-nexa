@@ -22,7 +22,6 @@ jobs:
         id: version
         shell: bash
         run: |
-          # Every commit on main gets exactly one public release.
           COMMITS_AFTER_RESET=$(git rev-list --count 6b3c0a21d3ac28b34378d9b4452e966c67dd8f72..HEAD)
           VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
           if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
@@ -42,8 +41,22 @@ jobs:
       - name: Build APK
         run: gradle -p apps/android :app:assembleDebug
 
-      - name: Verify APK
-        run: test -f apps/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Sign APK with permanent release key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 || secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD || secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS || secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo "Keystore secret is missing"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "Keystore password secret is missing"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Key alias secret is missing"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Key password secret is missing"; exit 1; }
+          printf "%s" "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/nexa-release.jks"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/nexa-release.jks" --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out apps/android/app/build/outputs/apk/debug/nexa-signed.apk apps/android/app/build/outputs/apk/debug/app-debug.apk
+          mv apps/android/app/build/outputs/apk/debug/nexa-signed.apk apps/android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose apps/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Rename APK
         run: cp apps/android/app/build/outputs/apk/debug/app-debug.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"
@@ -53,12 +66,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -euo pipefail
           if gh release view "$VERSION" >/dev/null 2>&1; then
-            echo "Release $VERSION already exists; skipping."
-            exit 0
+            echo "Release $VERSION already exists; refusing to overwrite a release."
+            exit 1
           fi
-          gh release create "$VERSION" \
-            "Korczak-HUB-Nexa-${VERSION}.apk" \
-            --target "${GITHUB_SHA}" \
-            --title "Korczak Nexa ${VERSION}" \
-            --notes "Versão ${VERSION} do Korczak Nexa. APK Android incluído."
+          gh release create "$VERSION" "Korczak-HUB-Nexa-${VERSION}.apk" --target "${GITHUB_SHA}" --title "Korczak Nexa ${VERSION}" --notes "Versão ${VERSION} do Korczak Nexa. APK Android assinado com a chave permanente de produção."

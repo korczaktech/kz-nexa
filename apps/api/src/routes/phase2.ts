@@ -1,5 +1,5 @@
 import type{FastifyInstance,FastifyReply,FastifyRequest}from"fastify";
-import{ObjectId}from"mongodb";
+import{ObjectId}from"mongodb";import{columnName}from"@kz-nexa/shared";
 import{productDb}from"../db.js";
 import{requireAuth}from"./auth.js";
 
@@ -116,7 +116,7 @@ export async function phase2Routes(app:FastifyInstance){
     const wb:any=await productDb().collection("workbooks").findOne({_id:wid});if(!wb)return sendError(res,"NOT_FOUND",404);
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any,sheet=wb.sheets?.find((x:any)=>x.id===b.sheetId)||wb.sheets?.[0];if(!sheet)return sendError(res,"INVALID_SHEET");
     const range=String(b.range||"A1:A1"),[a,z]=range.split(":");const parse=(k:string)=>{const m=/^([A-Z]+)(\\d+)$/i.exec(k);if(!m)throw Error("RANGE");let c=0;for(const ch of m[1].toUpperCase())c=c*26+ch.charCodeAt(0)-64;return{r:Number(m[2])-1,c:c-1}};const p=parse(a),q=parse(z||a),rows:string[][]=[];
-    for(let r=Math.min(p.r,q.r);r<=Math.max(p.r,q.r);r++){const row:string[]=[];for(let c=Math.min(p.c,q.c);c<=Math.max(p.c,q.c);c++)row.push(String(sheet.cells?.[String.fromCharCode(65+c)+(r+1)]?.input||""));rows.push(row)}
+    for(let r=Math.min(p.r,q.r);r<=Math.max(p.r,q.r);r++){const row:string[]=[];for(let c=Math.min(p.c,q.c);c<=Math.max(p.c,q.c);c++)row.push(String(sheet.cells?.[columnName(c)+(r+1)]?.input||""));rows.push(row)}
     const filters=Array.isArray(b.filters)?b.filters:[];const header=rows.shift()||[],colIndex=(name:string)=>{const n=header.indexOf(name);return n>=0?n:Number(name)};
     let filtered=rows.filter((row:string[])=>filters.every((f:any)=>{const v=row[colIndex(String(f.column))]??"",x=String(f.value??"");switch(f.operator){case"eq":return v===x;case"neq":return v!==x;case"contains":return v.toLowerCase().includes(x.toLowerCase());case"gt":return Number(v.replace(",","."))>Number(x.replace(",","."));case"gte":return Number(v.replace(",","."))>=Number(x.replace(",","."));case"lt":return Number(v.replace(",","."))<Number(x.replace(",","."));case"lte":return Number(v.replace(",","."))<=Number(x.replace(",","."));default:return true}}));
     if(b.sort){const ci=colIndex(String(b.sort.column));filtered.sort((x,y)=>{const nx=Number(x[ci]?.replace(",",".")),ny=Number(y[ci]?.replace(",","."));const cmp=Number.isFinite(nx)&&Number.isFinite(ny)?nx-ny:String(x[ci]??"").localeCompare(String(y[ci]??""));return b.sort.direction==="desc"?-cmp:cmp})}

@@ -22,29 +22,41 @@ class MainActivity:Activity(){
   Thread{
    var retry=false
    try{
-    val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection)
-    conn.requestMethod="GET"
-    conn.setRequestProperty("Accept","application/vnd.github+json")
-    conn.setRequestProperty("User-Agent","Korczak-Nexa/$APP_VERSION")
-    conn.connectTimeout=10000
-    conn.readTimeout=15000
+    val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest")
+    val conn=(url.openConnection() as HttpURLConnection).apply{
+     instanceFollowRedirects=true
+     requestMethod="GET"
+     setRequestProperty("Accept","application/vnd.github+json")
+     setRequestProperty("User-Agent","Korczak-Nexa-Updater")
+     setRequestProperty("Cache-Control","no-cache")
+     setRequestProperty("Pragma","no-cache")
+     connectTimeout=15000
+     readTimeout=20000
+     useCaches=false
+    }
     val code=conn.responseCode
     if(code !in 200..299)throw IOException("GitHub HTTP $code")
     val body=conn.inputStream.bufferedReader().use{it.readText()}
     conn.disconnect()
     val release=JSONObject(body)
-    if(release.optBoolean("draft")||release.optBoolean("prerelease"))throw IOException("Release inválida")
-    val tag=release.optString("tag_name").removePrefix("v").trim()
-    if(!Regex("^0\\.0\\.0\\.(\\d+)$").matches(tag))throw IOException("Versão inválida")
-    val assets=release.optJSONArray("assets")?:throw IOException("Assets ausentes")
+    if(release.optBoolean("draft"))throw IOException("Release draft")
+    if(release.optBoolean("prerelease"))throw IOException("Latest release é pré-lançamento")
+    val tag=release.optString("tag_name").trim().removePrefix("v")
+    if(tag.isBlank())throw IOException("Latest sem tag")
+    val assets=release.optJSONArray("assets")?:throw IOException("Latest sem assets")
     var downloadUrl=""
+    var fallbackUrl=""
     for(i in 0 until assets.length()){
-     val a=assets.getJSONObject(i)
-     if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",true)&&a.optString("state","uploaded")=="uploaded"){
-      downloadUrl=a.optString("browser_download_url");break
-     }
+     val asset=assets.getJSONObject(i)
+     if(!asset.optString("name").lowercase(Locale.ROOT).endsWith(".apk"))continue
+     if(asset.optString("state","uploaded")!="uploaded")continue
+     val candidate=asset.optString("browser_download_url").trim()
+     if(candidate.isBlank())continue
+     if(asset.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",true)){downloadUrl=candidate;break}
+     if(fallbackUrl.isBlank())fallbackUrl=candidate
     }
-    if(downloadUrl.isBlank())throw IOException("APK da release ainda não disponível")
+    if(downloadUrl.isBlank())downloadUrl=fallbackUrl
+    if(downloadUrl.isBlank())throw IOException("Nenhum APK publicado na latest")
     if(isNewer(tag,APP_VERSION)){
      runOnUiThread{
       if(!isFinishing&&!isDestroyed)showUpdateDialog(tag,downloadUrl)
@@ -92,23 +104,60 @@ class MainActivity:Activity(){
   dialog.show()
  }
  private fun isNewer(remote:String,current:String):Boolean{
-  val a=remote.substringAfterLast(".").toIntOrNull()?:return false
-  val b=current.substringAfterLast(".").toIntOrNull()?:return true
+  val a=remote.substringAfterLast(".").toLongOrNull()?:return remote!=current
+  val b=current.substringAfterLast(".").toLongOrNull()?:return true
   return a>b
  }
  private fun downloadUpdate(url:String,tag:String){
   showUpdateToast("Baixando Nexa $tag...",false)
-  Thread{try{
-   val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
-   val rq=android.app.DownloadManager.Request(Uri.parse(url)).setTitle("Korczak Nexa $tag").setDescription("Atualização do aplicativo").setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setMimeType("application/vnd.android.package-archive").setDestinationInExternalFilesDir(this,android.os.Environment.DIRECTORY_DOWNLOADS,"Korczak-HUB-Nexa-$tag.apk")
-   val id=dm.enqueue(rq);android.os.Handler(mainLooper).post(object:Runnable{override fun run(){
-    val q=dm.query(android.app.DownloadManager.Query().setFilterById(id));if(!q.moveToFirst()){q.close();android.os.Handler(mainLooper).postDelayed(this,1000);return}
-    val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));q.close()
-    if(status==android.app.DownloadManager.STATUS_SUCCESSFUL){val uri=dm.getUriForDownloadedFile(id);if(uri!=null)startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION));return}
-    if(status==android.app.DownloadManager.STATUS_FAILED){showUpdateToast("Falha ao baixar a atualização.",true);return}
-    android.os.Handler(mainLooper).postDelayed(this,1000)
-   }})
-  }catch(_:Exception){runOnUiThread{showUpdateToast("Falha ao iniciar atualização.",true)}}}.start()
+  Thread{
+   try{
+    val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
+    val fileName="Korczak-HUB-Nexa-$tag.apk"
+    val rq=android.app.DownloadManager.Request(Uri.parse(url)).apply{
+     setTitle("Korczak Nexa $tag")
+     setDescription("Atualização do aplicativo")
+     setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+     setMimeType("application/vnd.android.package-archive")
+     setAllowedOverMetered(true)
+     setAllowedOverRoaming(true)
+     setDestinationInExternalFilesDir(this@MainActivity,android.os.Environment.DIRECTORY_DOWNLOADS,fileName)
+    }
+    val id=dm.enqueue(rq)
+    val poll=object:Runnable{
+     override fun run(){
+      if(isFinishing||isDestroyed)return
+      val q=dm.query(android.app.DownloadManager.Query().setFilterById(id))
+      if(!q.moveToFirst()){q.close();updateHandler.postDelayed(this,1000);return}
+      val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS))
+      val reason=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_REASON))
+      q.close()
+      when(status){
+       android.app.DownloadManager.STATUS_SUCCESSFUL->{
+        val uri=dm.getUriForDownloadedFile(id)
+        if(uri==null){showUpdateToast("Não foi possível abrir a atualização.",true);return}
+        try{
+         startActivity(Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
+          data=uri
+          type="application/vnd.android.package-archive"
+          addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+         })
+        }catch(_:Exception){
+         try{startActivity(Intent(Intent.ACTION_VIEW).apply{
+          data=uri
+          type="application/vnd.android.package-archive"
+          addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+         })}catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
+        }
+       }
+       android.app.DownloadManager.STATUS_FAILED->showUpdateToast("Falha ao baixar a atualização ($reason). Tente novamente.",true)
+       else->updateHandler.postDelayed(this,1000)
+      }
+     }
+    }
+    updateHandler.post(poll)
+   }catch(_:Exception){runOnUiThread{showUpdateToast("Falha ao iniciar a atualização.",true)}}
+  }.start()
  }
 
  private fun showUpdateToast(message:String,error:Boolean){val box=LinearLayout(this);box.orientation=LinearLayout.HORIZONTAL;box.gravity=Gravity.CENTER_VERTICAL;box.setPadding(dp(16),dp(10),dp(18),dp(10));box.background=rounded(if(error)Color.rgb(35,16,17)else Color.rgb(6,22,14),if(error)Color.rgb(150,65,75)else Color.rgb(73,220,128),18f);val icon=TextView(this);icon.text=if(error)"!" else "↻";icon.gravity=Gravity.CENTER;icon.textSize=18f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(if(error)Color.rgb(255,150,160)else Color.rgb(108,255,148));box.addView(icon,LinearLayout.LayoutParams(dp(30),dp(30)).apply{rightMargin=dp(10)});val tv=textView(message,13.5f,Color.WHITE);tv.typeface=Typeface.DEFAULT_BOLD;box.addView(tv,LinearLayout.LayoutParams(-2,-2));val toast=Toast(this);toast.duration=Toast.LENGTH_LONG;toast.view=box;toast.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(82));toast.show()}

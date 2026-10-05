@@ -6,13 +6,80 @@ private data class Rule(var range:String,var op:String,var value:String,var bg:I
 private data class Validation(var type:String,var values:List<String> = emptyList(),var min:Double?=null,var max:Double?=null)
 private data class Sheet(val id:String=UUID.randomUUID().toString(),var name:String,var cells:MutableMap<String,Cell> = mutableMapOf(),var frozenRows:Int=0,var frozenCols:Int=0,var hiddenRows:MutableSet<Int> = mutableSetOf(),var hiddenCols:MutableSet<Int> = mutableSetOf(),var merged:MutableSet<String> = mutableSetOf(),var rules:MutableList<Rule> = mutableListOf(),var validations:MutableMap<String,Validation> = mutableMapOf(),var groupedRows:MutableSet<Int> = mutableSetOf(),var groupedCols:MutableSet<Int> = mutableSetOf())
 private data class Book(var id:String?=null,var name:String="Nova planilha",var sheets:MutableList<Sheet>,var active:Int=0)
-private class MatrixSplashView(context:android.content.Context):View(context){
- private val paint=Paint(Paint.ANTI_ALIAS_FLAG);private val rnd=Random();private val cols=ArrayList<Float>();private val heads=ArrayList<Float>();private var running=true;private val tick=object:Runnable{override fun run(){if(!running)return;invalidate();postDelayed(this,38)}}
- init{paint.typeface=Typeface.MONOSPACE;for(i in 0 until 34){cols.add(rnd.nextFloat());heads.add(-rnd.nextInt(900).toFloat())};post(tick)}
- override fun onDetachedFromWindow(){running=false;super.onDetachedFromWindow()}
- override fun onDraw(c:Canvas){val w=width.toFloat();val h=height.toFloat();c.drawColor(Color.rgb(1,7,4));paint.textSize=dp(13).toFloat();for(i in cols.indices){val x=cols[i]*w;val y0=heads[i];for(j in 0 until 18){val yy=y0+j*dp(18);if(yy<0||yy>h)continue;paint.color=if(j==0)Color.rgb(105,255,154)else Color.rgb(35,170,91);paint.alpha=if(j==0)220 else 72;c.drawText(if(rnd.nextBoolean())"1" else "0",x,yy,paint)}heads[i]+=dp(3);if(heads[i]>h+dp(100))heads[i]=-rnd.nextInt(500).toFloat()}
- val cx=w/2f;val cy=h*.40f;paint.style=Paint.Style.STROKE;paint.strokeWidth=dp(3).toFloat();paint.color=Color.WHITE;paint.alpha=238;c.drawRoundRect(cx-dp(92),cy-dp(92),cx+dp(92),cy+dp(92),dp(22).toFloat(),dp(22).toFloat(),paint);c.drawLine(cx-dp(31),cy-dp(92),cx-dp(31),cy+dp(92),paint);c.drawLine(cx+dp(31),cy-dp(92),cx+dp(31),cy+dp(92),paint);c.drawLine(cx-dp(92),cy-dp(31),cx+dp(92),cy-dp(31),paint);c.drawLine(cx-dp(92),cy+dp(31),cx+dp(92),cy+dp(31),paint);paint.color=Color.rgb(105,255,154);paint.strokeWidth=dp(7).toFloat();val path=Path();path.moveTo(cx-dp(75),cy+dp(50));path.lineTo(cx-dp(35),cy+dp(10));path.lineTo(cx,cy+dp(34));path.lineTo(cx+dp(42),cy-dp(24));path.lineTo(cx+dp(75),cy-dp(2));c.drawPath(path,paint);paint.style=Paint.Style.FILL}
- private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt()
+private class MatrixSplashView(context: android.content.Context) : View(context) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val random = java.util.Random()
+    private val columns = mutableListOf<Float>()
+    private val heads = mutableListOf<Float>()
+    private var running = true
+
+    init {
+        paint.typeface = Typeface.MONOSPACE
+        repeat(34) {
+            columns.add(random.nextFloat())
+            heads.add(-random.nextInt(900).toFloat())
+        }
+        post(tick)
+    }
+
+    private val tick = object : Runnable {
+        override fun run() {
+            if (!running) return
+            invalidate()
+            postDelayed(this, 38)
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        running = false
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        canvas.drawColor(Color.rgb(1, 7, 4))
+        paint.textSize = dp(13).toFloat()
+
+        for (i in columns.indices) {
+            val x = columns[i] * w
+            val startY = heads[i]
+            for (j in 0 until 18) {
+                val y = startY + j * dp(18)
+                if (y < 0f || y > h) continue
+                paint.color = if (j == 0) Color.rgb(105, 255, 154) else Color.rgb(35, 170, 91)
+                paint.alpha = if (j == 0) 220 else 72
+                canvas.drawText(if (random.nextBoolean()) "1" else "0", x, y, paint)
+            }
+            heads[i] += dp(3)
+            if (heads[i] > h + dp(100)) heads[i] = -random.nextInt(500).toFloat()
+        }
+
+        val cx = w / 2f
+        val cy = h * 0.40f
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(3).toFloat()
+        paint.color = Color.WHITE
+        paint.alpha = 238
+        canvas.drawRoundRect(cx - dp(92), cy - dp(92), cx + dp(92), cy + dp(92), dp(22).toFloat(), dp(22).toFloat(), paint)
+        canvas.drawLine(cx - dp(31), cy - dp(92), cx - dp(31), cy + dp(92), paint)
+        canvas.drawLine(cx + dp(31), cy - dp(92), cx + dp(31), cy + dp(92), paint)
+        canvas.drawLine(cx - dp(92), cy - dp(31), cx + dp(92), cy - dp(31), paint)
+        canvas.drawLine(cx - dp(92), cy + dp(31), cx + dp(92), cy + dp(31), paint)
+
+        paint.color = Color.rgb(105, 255, 154)
+        paint.strokeWidth = dp(7).toFloat()
+        val chart = Path()
+        chart.moveTo(cx - dp(75), cy + dp(50))
+        chart.lineTo(cx - dp(35), cy + dp(10))
+        chart.lineTo(cx, cy + dp(34))
+        chart.lineTo(cx + dp(42), cy - dp(24))
+        chart.lineTo(cx + dp(75), cy - dp(2))
+        canvas.drawPath(chart, paint)
+        paint.style = Paint.Style.FILL
+    }
+
+    private fun dp(value: Int): Int = ((value * resources.displayMetrics.density) + 0.5f).toInt()
 }
 class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE

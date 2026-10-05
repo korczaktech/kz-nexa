@@ -43,8 +43,48 @@ class MainActivity:Activity(){
    }})
   }catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha ao iniciar atualização.",Toast.LENGTH_LONG).show()}}}.start()
  }
- private fun logoView(size:Int=96):ImageView{val v=ImageView(this);v.setImageResource(R.drawable.nexa_app_icon);v.scaleType=ImageView.ScaleType.CENTER_INSIDE;v.layoutParams=LinearLayout.LayoutParams(size,size).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=20};return v}
- private fun login(){root.removeAllViews();val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(48,64,48,48);l.setBackgroundColor(Color.rgb(6,16,11));l.addView(logoView(128));val t=TextView(this);t.text="Korczak Nexa";t.textSize=30f;t.gravity=Gravity.CENTER;t.setTextColor(Color.WHITE);l.addView(t);val e=EditText(this);e.hint="Email";l.addView(e);val p=EditText(this);p.hint="Senha";p.inputType=129;l.addView(p);val err=TextView(this);err.setTextColor(Color.RED);l.addView(err);val bt=Button(this);bt.text="Entrar";l.addView(bt);root.addView(l);bt.setOnClickListener{Thread{try{val r=req("/v1/auth/login","POST",JSONObject().put("email",e.text.toString()).put("password",p.text.toString()).toString(),null);if(r.first !in 200..299)throw Exception(JSONObject(r.second).optString("message","Falha no login"));val j=JSONObject(r.second);token=j.getString("token");uid=j.getJSONObject("user").getString("id");getPreferences(0).edit().putString("token",token).putString("uid",uid).apply();runOnUiThread{load()}}catch(x:Exception){runOnUiThread{err.text=x.message;bt.isEnabled=true}}}.start()}}
+ private fun dp(v:Int)=((v*resources.displayMetrics.density)+0.5f).toInt()
+ private fun textView(text:String,size:Float,color:Int=Color.WHITE):TextView{val v=TextView(this);v.text=text;v.textSize=size;v.setTextColor(color);return v}
+ private fun rounded(fill:Int,stroke:Int=Color.TRANSPARENT,radius:Float=18f):android.graphics.drawable.GradientDrawable=android.graphics.drawable.GradientDrawable().apply{setColor(fill);if(stroke!=Color.TRANSPARENT)setStroke(dp(1),stroke);cornerRadius=dp(radius.toInt()).toFloat()}
+ private fun inputField(hint:String,password:Boolean=false):EditText{val e=EditText(this);e.hint=hint;e.setTextColor(Color.WHITE);e.setHintTextColor(Color.rgb(130,160,143));e.textSize=15f;e.setSingleLine(true);e.setPadding(dp(18),0,dp(18),0);e.background=rounded(Color.rgb(12,30,20),Color.rgb(38,78,55),16f);if(password)e.inputType=129;return e}
+ private fun actionButton(label:String,primary:Boolean=true):TextView{val b=textView(label,15f);b.gravity=Gravity.CENTER;b.typeface=Typeface.DEFAULT_BOLD;b.setPadding(dp(18),dp(14),dp(18),dp(14));b.background=rounded(if(primary)Color.rgb(48,170,101) else Color.rgb(16,38,25),if(primary)Color.TRANSPARENT else Color.rgb(53,91,68),16f);b.isClickable=true;return b}
+ private fun login(){showAuth("login")}
+ private fun showAuth(mode:String){
+  root.removeAllViews()
+  val scroll=ScrollView(this);scroll.setBackgroundColor(Color.rgb(4,12,8))
+  val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(dp(28),dp(42),dp(28),dp(34))
+  val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(26),dp(28),dp(26),dp(26));card.background=rounded(Color.rgb(7,20,13),Color.rgb(29,61,43),24f)
+  val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;card.addView(logo,LinearLayout.LayoutParams(dp(94),dp(94)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(12)})
+  val brand=textView("NEXA",28f);brand.typeface=Typeface.DEFAULT_BOLD;brand.gravity=Gravity.CENTER;card.addView(brand)
+  val sub=textView(if(mode=="login")"Acesso ao seu espaço de trabalho" else if(mode=="register")"Crie seu acesso ao Korczak Nexa" else "Recupere o acesso à sua conta",14f,Color.rgb(154,190,168));sub.gravity=Gravity.CENTER;card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(24)})
+  val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD;card.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
+  val email=inputField("Email");card.addView(email,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
+  if(mode=="register"){
+   val name=inputField("Nome completo");card.addView(name,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
+   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
+   val confirm=inputField("Confirmar senha",true);card.addView(confirm,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(16)})
+   val msg=textView("",13f,Color.rgb(255,130,130));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+   val go=actionButton("Criar minha conta");card.addView(go,LinearLayout.LayoutParams(-1,dp(52)))
+   go.setOnClickListener{if(name.text.toString().trim().isEmpty()||email.text.toString().trim().isEmpty()||pass.text.length<6){msg.text="Preencha os campos e use uma senha com pelo menos 6 caracteres.";return@setOnClickListener};if(pass.text.toString()!=confirm.text.toString()){msg.text="As senhas não coincidem.";return@setOnClickListener};msg.text="Cadastro preparado. A ativação da conta será concluída pelo serviço Nexa."}
+  }else if(mode=="recover"){
+   val msg=textView("Informe seu email para receber as instruções de recuperação.",13f,Color.rgb(154,190,168));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
+   val go=actionButton("Enviar instruções");card.addView(go,LinearLayout.LayoutParams(-1,dp(52)))
+   go.setOnClickListener{msg.text="Se o email estiver cadastrado, você receberá as instruções de recuperação."}
+  }else{
+   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
+   val err=textView("",13f,Color.rgb(255,130,130));card.addView(err,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+   val bt=actionButton("Entrar");card.addView(bt,LinearLayout.LayoutParams(-1,dp(52)))
+   bt.setOnClickListener{bt.isEnabled=false;Thread{try{val r=req("/v1/auth/login","POST",JSONObject().put("email",email.text.toString()).put("password",pass.text.toString()).toString(),null);if(r.first !in 200..299)throw Exception(JSONObject(r.second).optString("message","Não foi possível entrar."));val j=JSONObject(r.second);token=j.getString("token");uid=j.getJSONObject("user").getString("id");getPreferences(0).edit().putString("token",token).putString("uid",uid).apply();runOnUiThread{load()}}catch(x:Exception){runOnUiThread{err.text=x.message?:"Falha ao entrar";bt.isEnabled=true}}}.start()}
+  }
+  val links=LinearLayout(this);links.gravity=Gravity.CENTER;links.setPadding(0,dp(18),0,0)
+  fun link(label:String,next:String){val b=textView(label,14f,Color.rgb(102,222,145));b.setPadding(dp(7),dp(8),dp(7),dp(8));b.isClickable=true;b.setOnClickListener{showAuth(next)};links.addView(b)}
+  if(mode!="login")link("Entrar","login")
+  if(mode=="login"){link("Criar conta","register");link("Recuperar acesso","recover")}else if(mode!="recover"){link("Recuperar acesso","recover")}
+  card.addView(links)
+  l.addView(card,LinearLayout.LayoutParams(-1,-2).apply{gravity=Gravity.CENTER_HORIZONTAL})
+  val footer=textView("KORCZAK HUB  •  TECNOLOGIA BRASILEIRA",11f,Color.rgb(91,123,105));footer.gravity=Gravity.CENTER;l.addView(footer,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(22)})
+  scroll.addView(l);root.addView(scroll)
+ }
  private fun load(){Thread{try{val r=req("/v1/workbooks","GET",null,token);val a=JSONArray(r.second);book=if(a.length()>0)from(a.getJSONObject(0))else Book(sheets=mutableListOf(Sheet(name="Planilha 1")));runOnUiThread{editor()}}catch(x:Exception){runOnUiThread{Toast.makeText(this,"Falha ao carregar",Toast.LENGTH_LONG).show();login()}}}.start()}
  private fun editor(){root.removeAllViews();val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;val bar=LinearLayout(this);bar.gravity=Gravity.CENTER_VERTICAL;fun b(s:String,f:()->Unit){Button(this).also{x->x.text=s;x.setOnClickListener{f()};bar.addView(x)}};b("Salvar"){save()};b("Nexa Completo"){phase2()};b("↶"){undo()};b("↷"){redo()};b("+ Aba"){addSheet()};b("Mesclar"){merge()};b("Desmesclar"){unmerge()};b("Congelar"){freeze()};b("Ocultar"){hide()};b("Mostrar"){show()};b("Zoom +"){grid.zoom*=1.15f;grid.invalidate()};b("Zoom -"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};b("B"){toggle("b")};b("I"){toggle("i")};b("U"){toggle("u")};b("S"){toggle("s")};b("←"){align(0)};b("↔"){align(1)};b("→"){align(2)};b("Tamanho"){fontSize()};b("Quebra"){wrap()};b("Bordas"){border()};b("Condicional"){conditional()};b("Validação"){validation()};b("Agrupar linha"){groupRow()};b("Agrupar coluna"){groupCol()};b("Grupos +/-"){toggleGroups()};b("Número"){numberFormat()};b("Preencher"){fill()};b("Copiar"){copy()};b("Colar"){paste()};b("Importar"){importFile()};b("Exportar"){exportFile()};b("Sair"){getPreferences(0).edit().clear().apply();token=null;login()};l.addView(bar);grid=Grid();l.addView(grid,LinearLayout.LayoutParams(-1,0,1f));root.addView(l)}
  private val history=ArrayDeque<String>();private val future=ArrayDeque<String>();private val collapsedRows=mutableSetOf<Int>();private val collapsedCols=mutableSetOf<Int>()

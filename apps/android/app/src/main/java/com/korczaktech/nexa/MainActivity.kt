@@ -11,9 +11,11 @@ class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var profileName="Meu perfil";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE
  private var appReady=false
  override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11);root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);appReady=true;token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";profileName=getPreferences(0).getString("profileName","Meu perfil")?:"Meu perfil";showMatrixSplash{if(token==null)login()else load()};android.os.Handler(mainLooper).postDelayed({checkForUpdate()},500)}
- override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized)android.os.Handler(mainLooper).postDelayed({checkForUpdate()},350)}
+ override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized){android.os.Handler(mainLooper).postDelayed({finishPendingInstallIfPossible()},250);android.os.Handler(mainLooper).postDelayed({checkForUpdate()},550)}}
+ private fun finishPendingInstallIfPossible(){val uri=pendingInstallUri?:return;if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls())return;pendingInstallUri=null;launchApkInstaller(uri)}
  private var updateCheckRunning=false
  private var updateDialogShowing=false
+ private var pendingInstallUri:Uri?=null
  private val updateHandler=Handler(Looper.getMainLooper())
 
  private fun checkForUpdate(){
@@ -136,19 +138,10 @@ class MainActivity:Activity(){
        android.app.DownloadManager.STATUS_SUCCESSFUL->{
         val uri=dm.getUriForDownloadedFile(id)
         if(uri==null){showUpdateToast("Não foi possível abrir a atualização.",true);return}
-        try{
-         startActivity(Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
-          data=uri
-          type="application/vnd.android.package-archive"
-          addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-         })
-        }catch(_:Exception){
-         try{startActivity(Intent(Intent.ACTION_VIEW).apply{
-          data=uri
-          type="application/vnd.android.package-archive"
-          addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-         })}catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
-        }
+        if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
+         pendingInstallUri=uri
+         runOnUiThread{AlertDialog.Builder(this).setTitle("Permitir atualização do Nexa").setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.").setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}.setNegativeButton("Agora não",null).show()}
+        }else launchApkInstaller(uri)
        }
        android.app.DownloadManager.STATUS_FAILED->showUpdateToast("Falha ao baixar a atualização ($reason). Tente novamente.",true)
        else->updateHandler.postDelayed(this,1000)
@@ -160,6 +153,26 @@ class MainActivity:Activity(){
   }.start()
  }
 
+ private fun launchApkInstaller(uri:Uri){
+  try{
+   val intent=Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
+    data=uri
+    type="application/vnd.android.package-archive"
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
+   }
+   startActivity(intent)
+  }catch(_:Exception){
+   try{
+    startActivity(Intent(Intent.ACTION_VIEW).apply{
+     data=uri
+     type="application/vnd.android.package-archive"
+     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
+    })
+   }catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
+  }
+ }
  private fun showUpdateToast(message:String,error:Boolean){val box=LinearLayout(this);box.orientation=LinearLayout.HORIZONTAL;box.gravity=Gravity.CENTER_VERTICAL;box.setPadding(dp(16),dp(10),dp(18),dp(10));box.background=rounded(if(error)Color.rgb(35,16,17)else Color.rgb(6,22,14),if(error)Color.rgb(150,65,75)else Color.rgb(73,220,128),18f);val icon=TextView(this);icon.text=if(error)"!" else "↻";icon.gravity=Gravity.CENTER;icon.textSize=18f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(if(error)Color.rgb(255,150,160)else Color.rgb(108,255,148));box.addView(icon,LinearLayout.LayoutParams(dp(30),dp(30)).apply{rightMargin=dp(10)});val tv=textView(message,13.5f,Color.WHITE);tv.typeface=Typeface.DEFAULT_BOLD;box.addView(tv,LinearLayout.LayoutParams(-2,-2));val toast=Toast(this);toast.duration=Toast.LENGTH_LONG;toast.view=box;toast.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(82));toast.show()}
  private fun dp(v:Int)=((v*resources.displayMetrics.density)+0.5f).toInt()
  private fun textView(text:String,size:Float,color:Int=Color.WHITE):TextView{val v=TextView(this);v.text=text;v.textSize=size;v.setTextColor(color);return v}

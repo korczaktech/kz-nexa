@@ -1,0 +1,11 @@
+import assert from"node:assert/strict";import jwt from"jsonwebtoken";import bcrypt from"bcryptjs";import{readFile}from"node:fs/promises";
+process.env.JWT_SECRET="phase1-test-secret";process.env.MONGODB_URI="mongodb://127.0.0.1:27017/test";
+const timeout=async<T>(p:Promise<T>,ms=5000)=>Promise.race([p,new Promise<never>((_,r)=>setTimeout(()=>r(Error("TEST_TIMEOUT")),ms))]);
+const reply=()=>{const r:{status:number;body:unknown;code:(n:number)=>typeof r;send:(v:unknown)=>typeof r}={status:200,body:null,code(n){this.status=n;return this},send(v){this.body=v;return this}};return r};
+const{requireAuth}=await import("./routes/auth.js");
+const missing=reply();await timeout(requireAuth({headers:{}} as any,missing as any));assert.equal(missing.status,401);
+const invalid=reply();await timeout(requireAuth({headers:{authorization:"Bearer invalid"}} as any,invalid as any));assert.equal(invalid.status,401);
+const token=jwt.sign({sub:"user-123",email:"u@example.com",name:"Usuário",role:"user"},process.env.JWT_SECRET!);const valid=reply();const req:any={headers:{authorization:"Bearer "+token}};await timeout(requireAuth(req,valid as any));assert.equal(req.user.sub,"user-123");assert.equal(req.user.email,"u@example.com");
+const hash=await bcrypt.hash("senha-segura",10);assert.equal(await bcrypt.compare("errada",hash),false);assert.equal(await bcrypt.compare("senha-segura",hash),true);
+const source=await readFile(new URL("./routes/workbooks.js",import.meta.url),"utf8");assert.match(source,/ownerId:req\.user!\.sub/);assert.match(source,/normalize\(req\.body,req\.user!\.sub\)/);assert.equal((source.match(/preHandler:requireAuth/g)||[]).length,5);
+console.log("Phase 1 auth/ownership verification: OK");process.exit(0);

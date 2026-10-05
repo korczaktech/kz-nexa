@@ -97,6 +97,16 @@ export async function phase2Routes(app:FastifyInstance){
     const r=await productDb().collection("versions").insertOne(d);return res.code(201).send({...d,_id:String(r.insertedId)});
   });
 
+  app.post("/v1/workbooks/:id/versions/:versionId/restore",{preHandler:requireAuth},async(req,res)=>{
+    const id=String((req.params as any).id),vid=oid(String((req.params as any).versionId));if(!vid||!await access(req,id,"editor"))return sendError(res,"FORBIDDEN",403);
+    const v=await productDb().collection("versions").findOne({_id:vid,workbookId:id});if(!v)return sendError(res,"NOT_FOUND",404);
+    const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");
+    const snap=v.snapshot as any;if(!snap||!Array.isArray(snap.sheets))return sendError(res,"INVALID_VERSION");
+    const d={...snap,updatedAt:now(),ownerId:req.user!.sub};delete d._id;
+    const r=await productDb().collection("workbooks").findOneAndUpdate({_id:wid,ownerId:req.user!.sub},{$set:d},{returnDocument:"after"});
+    return r?res.send({...r,_id:id}):sendError(res,"NOT_FOUND",404);
+  });
+
   app.get("/v1/workbooks/:id/versions",{preHandler:requireAuth},async(req,res)=>{
     const id=String((req.params as any).id);if(!await access(req,id))return sendError(res,"FORBIDDEN",403);
     const docs=await productDb().collection("versions").find({workbookId:id},{projection:{snapshot:0}}).sort({version:-1}).limit(100).toArray();

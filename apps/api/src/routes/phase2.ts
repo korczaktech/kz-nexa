@@ -4,7 +4,7 @@ import{productDb}from"../db.js";
 import{requireAuth}from"./auth.js";
 
 const columnName=(n:number)=>{let s="";n++;while(n){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26)}return s};
-const collections=["charts","tables","pivots","dashboards","comments","shares","versions"] as const;
+const collections=["charts","tables","pivots","dashboards","comments","shares"] as const;
 type CollectionName=typeof collections[number];
 const now=()=>new Date().toISOString();
 const oid=(v:string)=>ObjectId.isValid(v)?new ObjectId(v):null;

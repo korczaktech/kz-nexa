@@ -7,5 +7,5 @@ const missing=reply();await timeout(requireAuth({headers:{}} as any,missing as a
 const invalid=reply();await timeout(requireAuth({headers:{authorization:"Bearer invalid"}} as any,invalid as any));assert.equal(invalid.status,401);
 const token=jwt.sign({sub:"user-123",email:"u@example.com",name:"Usuário",role:"user"},process.env.JWT_SECRET!);const valid=reply();const req:any={headers:{authorization:"Bearer "+token}};await timeout(requireAuth(req,valid as any));assert.equal(req.user.sub,"user-123");assert.equal(req.user.email,"u@example.com");
 const hash=await bcrypt.hash("senha-segura",10);assert.equal(await bcrypt.compare("errada",hash),false);assert.equal(await bcrypt.compare("senha-segura",hash),true);
-const source=await readFile(new URL("./routes/workbooks.js",import.meta.url),"utf8");assert.match(source,/ownerId:req\.user!\.sub/);assert.match(source,/normalize\(req\.body,req\.user!\.sub\)/);assert.equal((source.match(/preHandler:requireAuth/g)||[]).length,5);
+const source=await readFile(new URL("./routes/workbooks.js",import.meta.url),"utf8");assert.match(source,/ownerId:req\.user\.sub/);assert.match(source,/normalize\(req\.body,req\.user\.sub\)/);assert.equal((source.match(/preHandler:requireAuth/g)||[]).length,5);
 console.log("Phase 1 auth/ownership verification: OK");process.exit(0);

@@ -102,7 +102,7 @@ export async function phase2Routes(app:FastifyInstance){
     const v=await productDb().collection("versions").findOne({_id:vid,workbookId:id});if(!v)return sendError(res,"NOT_FOUND",404);
     const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");
     const snap=v.snapshot as any;if(!snap||!Array.isArray(snap.sheets))return sendError(res,"INVALID_VERSION");
-    const d={...snap,updatedAt:now(),ownerId:req.user!.sub};delete d._id;
+    const d={...snap,updatedAt:now(),ownerId:String(snap.ownerId||req.user!.sub)};delete d._id;
     const r=await productDb().collection("workbooks").findOneAndUpdate({_id:wid},{$set:d},{returnDocument:"after"});
     return r?res.send({...r,_id:id}):sendError(res,"NOT_FOUND",404);
   });

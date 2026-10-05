@@ -22,7 +22,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="0.0.0.$(git rev-list --count HEAD)"
+          # 0.0.0.652 was the bad historical counter-based release.\n          # From this point the sequence is reset to 0.0.0.2 and increments once per commit.\n          COMMITS_AFTER_RESET=$(git rev-list --count 0.0.0.652..HEAD)\n          VERSION="0.0.0.$((COMMITS_AFTER_RESET + 1))"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXA_VERSION=$VERSION"
 

@@ -25,7 +25,7 @@ class MainActivity:Activity(){
    if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
    val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
    if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
-   runOnUiThread{val dialog=AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).create();dialog.setOnShowListener{dialog.window?.setDimAmount(0f)};dialog.show();dialog.window?.setDimAmount(0f)}
+   runOnUiThread{val dialog=AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).create();dialog.show();dialog.window?.setDimAmount(0f);dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
   }catch(_:Exception){}finally{updateCheckRunning=false}}.start()
  }
  private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}
@@ -72,7 +72,7 @@ class MainActivity:Activity(){
  private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104);isDither=true}
  private val p=Path()
  override fun onDraw(c:Canvas){
-  val scale=0.66f;val sx=width/600f*scale;val sy=height/180f*scale;c.save();c.translate(width*(1f-scale)/2f,height*(1f-scale)/2f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
+  val scale=0.54f;val sx=width/600f*scale;val sy=height/180f*scale;c.save();c.translate(width*(1f-scale)/2f,height*(1f-scale)/2f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
   p.reset();w0(p);c.drawPath(p,paintWhite)
   p.reset();w1(p);c.drawPath(p,paintWhite)
   p.reset();w2(p);c.drawPath(p,paintWhite)
@@ -125,10 +125,10 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   val scroll=ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.TRANSPARENT)
   val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(dp(22),dp(42),dp(22),dp(30))
   val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(24),dp(26),dp(24),dp(24))
-  card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=dp(14).toFloat()
+  card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=0f
   val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
-  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(118)).apply{bottomMargin=dp(5)})
+  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(92)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER
   card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
   val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD

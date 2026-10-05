@@ -147,7 +147,7 @@ class MainActivity:Activity(){
   private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
   private var lastX=0f;private var lastY=0f;private var panning=false
   override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;when(e.action){MotionEvent.ACTION_DOWN->{lastX=x;lastY=y;panning=false;selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};MotionEvent.ACTION_MOVE->{if(e.pointerCount>=2){panning=true;panX=(panX-(x-lastX)).coerceAtLeast(0f);panY=(panY-(y-lastY)).coerceAtLeast(0f);lastX=x;lastY=y;invalidate();return true};selEnd=locR(y);selColEnd=locC(x);invalidate();return true};MotionEvent.ACTION_UP->{if(!panning&&y>=head)edit(selStart,selColStart);return true}};return true}
-  private fun locR(y:Float):Int{var z=head;for(r in 0 until 200){if(book!!.sheets[book!!.active].hiddenRows.contains(r))continue;if(y>=z&&y<z+rh)return r;z+=rh};return 199}
-  private fun locC(x:Float):Int{var z=head;for(k in 0 until 50){if(book!!.sheets[book!!.active].hiddenCols.contains(k))continue;if(x>=z&&x<z+cw)return k;z+=cw};return 49}
+  private fun locR(y:Float):Int{val s=book!!.sheets[book!!.active];val logical=if(y<head+s.frozenRows*rh)y-head else y-head+panY;return (logical/rh).toInt().coerceIn(0,199)}
+  private fun locC(x:Float):Int{val s=book!!.sheets[book!!.active];val logical=if(x<head+s.frozenCols*cw)x-head else x-head+panX;return (logical/cw).toInt().coerceIn(0,49)}
  }
 }

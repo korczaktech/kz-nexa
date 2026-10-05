@@ -1,5 +1,5 @@
 const BASE = new URL("./", self.registration.scope).pathname;
-const CACHE = "nexa-shell-v2";
+const CACHE = "nexa-shell-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

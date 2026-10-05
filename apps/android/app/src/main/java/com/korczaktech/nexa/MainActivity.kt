@@ -308,222 +308,67 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
  private fun home(){
   root.removeAllViews()
   window.statusBarColor=Color.rgb(245,247,244)
-  window.navigationBarColor=Color.rgb(255,255,255)
+  window.navigationBarColor=Color.WHITE
+  val view=layoutInflater.inflate(R.layout.activity_main,root,false)
+  root.addView(view)
 
-  val page=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL
-   setBackgroundColor(Color.rgb(245,247,244))
-  }
+  val name=profileName.ifBlank{"Nexa"}
+  val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
+  view.findViewById<TextView>(R.id.userName).text=name
+  view.findViewById<TextView>(R.id.avatar).text=initials
+  view.findViewById<TextView>(R.id.featuredName).text=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
+  view.findViewById<TextView>(R.id.featuredEdited).text="Editado recentemente"
 
-  // Header inspirado no exemplo: limpo, claro e focado no Nexa.
-  val header=LinearLayout(this).apply{
-   gravity=Gravity.CENTER_VERTICAL
-   setPadding(dp(18),dp(10),dp(14),dp(8))
-   setBackgroundColor(Color.WHITE)
-  }
-  val mark=textView("N",17f,Color.WHITE).apply{
-   gravity=Gravity.CENTER
-   typeface=Typeface.DEFAULT_BOLD
-   background=rounded(Color.rgb(19,122,84),Color.rgb(19,122,84),10f)
-  }
-  header.addView(mark,LinearLayout.LayoutParams(dp(36),dp(36)).apply{rightMargin=dp(9)})
-  val brand=textView("Nexa",20f,Color.rgb(15,26,20)).apply{typeface=Typeface.DEFAULT_BOLD}
-  header.addView(brand,LinearLayout.LayoutParams(0,dp(40),1f).apply{gravity=Gravity.CENTER_VERTICAL})
-  val refresh=textView("↻",25f,Color.rgb(15,26,20)).apply{
-   gravity=Gravity.CENTER
-   isClickable=true
-   contentDescription="Atualizar"
-   setOnClickListener{
-    animate().rotationBy(360f).setDuration(550).start()
-    load()
-   }
-  }
-  header.addView(refresh,LinearLayout.LayoutParams(dp(42),dp(42)))
-  val initials=profileName.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}
-  val avatar=textView(initials.ifBlank{"N"},11.5f,Color.WHITE).apply{
-   gravity=Gravity.CENTER
-   typeface=Typeface.DEFAULT_BOLD
-   background=rounded(Color.rgb(14,77,54),Color.rgb(14,77,54),50f)
-  }
-  header.addView(avatar,LinearLayout.LayoutParams(dp(34),dp(34)).apply{leftMargin=dp(5)})
-  val name=textView(profileName,12f,Color.rgb(15,26,20)).apply{
-   typeface=Typeface.DEFAULT_BOLD
-   maxLines=1
-   ellipsize=android.text.TextUtils.TruncateAt.END
-  }
-  header.addView(name,LinearLayout.LayoutParams(dp(82),-2).apply{leftMargin=dp(7)})
-  header.setOnClickListener{profilePage()}
-  page.addView(header,LinearLayout.LayoutParams(-1,dp(58)))
-
-  val scroll=ScrollView(this).apply{isFillViewport=true}
-  val content=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL
-   setPadding(dp(18),dp(18),dp(18),dp(28))
-  }
-
-  val title=textView("Planilhas",25f,Color.rgb(15,26,20)).apply{typeface=Typeface.DEFAULT_BOLD}
-  content.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
-
-  val searchBox=LinearLayout(this).apply{
-   gravity=Gravity.CENTER_VERTICAL
-   setPadding(dp(13),0,dp(13),0)
-   background=rounded(Color.WHITE,Color.rgb(225,231,226),14f)
-  }
-  val searchIcon=textView("⌕",21f,Color.rgb(91,106,98)).apply{gravity=Gravity.CENTER}
-  searchBox.addView(searchIcon,LinearLayout.LayoutParams(dp(28),dp(46)))
-  val search=textView("",14f,Color.rgb(15,26,20))
-  val input=EditText(this).apply{
-   hint="Pesquisar planilhas"
-   setHintTextColor(Color.rgb(91,106,98))
-   setTextColor(Color.rgb(15,26,20))
-   textSize=14f
-   background=null
-   setSingleLine(true)
-   setPadding(dp(4),0,dp(4),0)
-   imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
-  }
-  searchBox.addView(input,LinearLayout.LayoutParams(0,dp(46),1f))
-  content.addView(searchBox,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(16)})
-
-  // Card "Continuar" com uma miniatura realista de planilha.
-  val featured=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL
-   setPadding(dp(16),dp(16),dp(16),dp(15))
-   background=rounded(Color.rgb(14,77,54),Color.rgb(14,77,54),24f)
-  }
-  val preview=GridLayout(this).apply{columnCount=8;rowCount=3}
+  val preview=view.findViewById<GridLayout>(R.id.gridPreview)
   val highlighted=setOf(1,4,9,10,17,19)
   for(i in 0 until 24){
    val cell=View(this)
-   val fill=when{
-    i==11->Color.rgb(19,122,84)
-    i in highlighted->Color.rgb(79,167,125)
-    else->Color.rgb(43,101,77)
-   }
-   cell.background=rounded(fill,if(i==11)Color.WHITE else Color.TRANSPARENT,4f)
-   preview.addView(cell,GridLayout.LayoutParams().apply{
-    width=0;height=dp(17)
-    columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f)
-    setMargins(dp(2),dp(2),dp(2),dp(2))
-   })
+   cell.setBackgroundResource(if(i==11)R.drawable.bg_cell_sel else if(i in highlighted)R.drawable.bg_cell_hl else R.drawable.bg_cell)
+   val lp=GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED),GridLayout.spec(GridLayout.UNDEFINED,1f))
+   lp.width=0;lp.height=dp(18);lp.setMargins(dp(2),dp(2),dp(2),dp(2));preview.addView(cell,lp)
   }
-  featured.addView(preview,LinearLayout.LayoutParams(-1,dp(65)))
-  val featureRow=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
-  val featureText=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-  val cont=textView("CONTINUAR EDITANDO",10.5f,Color.rgb(169,222,196)).apply{
-   typeface=Typeface.DEFAULT_BOLD
-   if(android.os.Build.VERSION.SDK_INT>=21)letterSpacing=.08f
-  }
-  featureText.addView(cont)
-  featureText.addView(textView(book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha",17f,Color.WHITE).apply{typeface=Typeface.DEFAULT_BOLD},LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)})
-  featureText.addView(textView("Editado recentemente",12f,Color.rgb(201,232,216)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)})
-  featureRow.addView(featureText,LinearLayout.LayoutParams(0,-2,1f))
-  val open=textView("Abrir",14f,Color.rgb(14,77,54)).apply{
-   gravity=Gravity.CENTER
-   typeface=Typeface.DEFAULT_BOLD
-   background=rounded(Color.WHITE,Color.WHITE,22f)
-   isClickable=true
-   setOnClickListener{editor()}
-  }
-  featureRow.addView(open,LinearLayout.LayoutParams(dp(82),dp(44)))
-  featured.addView(featureRow,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(13)})
-  content.addView(featured,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
 
-  val shortcuts=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  fun shortcut(label:String,glyph:String,action:()->Unit):View{
-   val card=LinearLayout(this).apply{
-    orientation=LinearLayout.VERTICAL
-    gravity=Gravity.CENTER
-    isClickable=true
-    isFocusable=true
-    setPadding(dp(5),dp(8),dp(5),dp(7))
-    background=rounded(Color.WHITE,Color.rgb(225,231,226),16f)
-    setOnClickListener{action()}
-   }
-   val icon=textView(glyph,21f,Color.rgb(19,122,84)).apply{gravity=Gravity.CENTER}
-   card.addView(icon,LinearLayout.LayoutParams(dp(25),dp(25)))
-   card.addView(textView(label,11.5f,Color.rgb(15,26,20)).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD},LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-   return card
-  }
-  shortcuts.addView(shortcut("Adicionar","↑"){addFilePage()},LinearLayout.LayoutParams(0,dp(68),1f).apply{rightMargin=dp(5)})
-  shortcuts.addView(shortcut("Abrir","□"){filesPage()},LinearLayout.LayoutParams(0,dp(68),1f).apply{leftMargin=dp(5);rightMargin=dp(5)})
-  shortcuts.addView(shortcut("Favoritos","★"){favoritesPage()},LinearLayout.LayoutParams(0,dp(68),1f).apply{leftMargin=dp(5)})
-  content.addView(shortcuts,LinearLayout.LayoutParams(-1,dp(68)).apply{bottomMargin=dp(17)})
+  val list=view.findViewById<LinearLayout>(R.id.listRecents)
+  val recentBook=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
+  val row=layoutInflater.inflate(R.layout.item_recent,list,false)
+  row.findViewById<TextView>(R.id.recentName).text=recentBook
+  row.findViewById<TextView>(R.id.recentMeta).text="Editado recentemente"
+  row.setOnClickListener{editor()}
+  list.addView(row)
 
-  val recentHeader=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
-  recentHeader.addView(textView("Recentes",16f,Color.rgb(15,26,20)).apply{typeface=Typeface.DEFAULT_BOLD},LinearLayout.LayoutParams(0,-2,1f))
-  val all=textView("Ver todas",13f,Color.rgb(19,122,84)).apply{
-   typeface=Typeface.DEFAULT_BOLD
-   isClickable=true
-   setOnClickListener{allDocumentsPage()}
+  view.findViewById<View>(R.id.btnRefresh).setOnClickListener{
+   it.animate().rotationBy(360f).setDuration(600).start()
+   load()
   }
-  recentHeader.addView(all)
-  content.addView(recentHeader,LinearLayout.LayoutParams(-1,dp(28)).apply{bottomMargin=dp(7)})
+  view.findViewById<View>(R.id.avatar).setOnClickListener{profilePage()}
+  view.findViewById<View>(R.id.userName).setOnClickListener{profilePage()}
+  view.findViewById<View>(R.id.btnOpen).setOnClickListener{editor()}
+  view.findViewById<View>(R.id.btnSeeAll).setOnClickListener{allDocumentsPage()}
+  view.findViewById<View>(R.id.shortcutImport).setOnClickListener{addFilePage()}
+  view.findViewById<View>(R.id.shortcutOpen).setOnClickListener{filesPage()}
+  view.findViewById<View>(R.id.shortcutFavorites).setOnClickListener{favoritesPage()}
+  view.findViewById<View>(R.id.navHome).setOnClickListener{home()}
+  view.findViewById<View>(R.id.navFiles).setOnClickListener{filesPage()}
+  view.findViewById<View>(R.id.btnCreate).setOnClickListener{newDocument()}
+  view.findViewById<View>(R.id.navTemplates).setOnClickListener{phase2Templates()}
+  view.findViewById<View>(R.id.navMore).setOnClickListener{morePage()}
 
-  fun recentRow(titleValue:String,meta:String,action:()->Unit){
-   val row=LinearLayout(this).apply{
-    gravity=Gravity.CENTER_VERTICAL
-    setPadding(dp(13),dp(10),dp(10),dp(10))
-    background=rounded(Color.WHITE,Color.rgb(225,231,226),14f)
-    isClickable=true
-    setOnClickListener{action()}
-   }
-   val tile=textView("▦",19f,Color.rgb(19,122,84)).apply{gravity=Gravity.CENTER}
-   tile.background=rounded(Color.rgb(227,242,234),Color.TRANSPARENT,10f)
-   row.addView(tile,LinearLayout.LayoutParams(dp(42),dp(42)).apply{rightMargin=dp(11)})
-   val tx=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-   tx.addView(textView(titleValue,14f,Color.rgb(15,26,20)).apply{typeface=Typeface.DEFAULT_BOLD})
-   tx.addView(textView(meta,11.5f,Color.rgb(91,106,98)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
-   row.addView(tx,LinearLayout.LayoutParams(0,-2,1f))
-   row.addView(textView("›",24f,Color.rgb(91,106,98)))
-   content.addView(row,LinearLayout.LayoutParams(-1,dp(64)).apply{bottomMargin=dp(8)})
-  }
-  recentRow(book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha","Editado agora"){editor()}
-  recentRow("Planilha de exemplo","Documento local"){newDocument()}
-  recentRow("Documentos favoritos","Acesso rápido"){favoritesPage()}
-
-  scroll.addView(content)
-  page.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-
-  // Mantém a navegação atual do Nexa; apenas o visual da página Início foi remodelado.
-  val nav=LinearLayout(this).apply{
-   gravity=Gravity.CENTER_VERTICAL
-   setPadding(dp(6),dp(5),dp(6),dp(5))
-   setBackgroundColor(Color.WHITE)
-  }
-  fun navItem(label:String,glyph:String,selected:Boolean,action:()->Unit):View{
-   val wrap=LinearLayout(this).apply{
-    orientation=LinearLayout.VERTICAL
-    gravity=Gravity.CENTER
-    isClickable=true
-    setOnClickListener{action()}
-   }
-   val color=if(selected)Color.rgb(19,122,84)else Color.rgb(91,106,98)
-   val icon=textView(glyph,21f,color).apply{gravity=Gravity.CENTER}
-   val pill=View(this).apply{background=rounded(Color.rgb(227,242,234),Color.TRANSPARENT,10f)}
-   wrap.addView(pill,LinearLayout.LayoutParams(dp(46),dp(28)))
-   val labelView=textView(label,10.5f,color).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD}
-   wrap.addView(labelView,LinearLayout.LayoutParams(-1,dp(19)).apply{topMargin=dp(2)})
-   (pill as View).foreground=android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
-   (pill as View).setOnClickListener{action()}
-   return wrap
-  }
-  nav.addView(navItem("Início","⌂",true){home()},LinearLayout.LayoutParams(0,dp(65),1f))
-  nav.addView(navItem("Armazenamento","▱",false){storagePage()},LinearLayout.LayoutParams(0,dp(65),1f))
-  val plus=textView("+",28f,Color.rgb(14,77,54)).apply{
-   gravity=Gravity.CENTER
-   typeface=Typeface.DEFAULT_BOLD
-   background=rounded(Color.rgb(191,227,209),Color.rgb(19,122,84),50f)
-   elevation=dp(3).toFloat()
-   setOnClickListener{newDocument()}
-  }
-  nav.addView(plus,LinearLayout.LayoutParams(dp(56),dp(56)).apply{gravity=Gravity.CENTER;leftMargin=dp(5);rightMargin=dp(5)})
-  nav.addView(navItem("Arquivos","□",false){filesPage()},LinearLayout.LayoutParams(0,dp(65),1f))
-  nav.addView(navItem("Mais","☰",false){morePage()},LinearLayout.LayoutParams(0,dp(65),1f))
-  page.addView(nav,LinearLayout.LayoutParams(-1,dp(72)))
-  root.addView(page)
- }
- private fun storageCard():View{val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(17),dp(15),dp(17),dp(14));box.background=rounded(Color.rgb(5,27,16),Color.rgb(37,108,67),20f);val stat=android.os.StatFs(android.os.Environment.getDataDirectory().path);val total=stat.totalBytes.toDouble();val free=stat.availableBytes.toDouble();val used=(total-free).coerceAtLeast(0.0);val pct=((used/total)*100.0).coerceIn(0.0,100.0);val row=LinearLayout(this);row.gravity=Gravity.CENTER_VERTICAL;val t=textView("Armazenamento do celular",15f,Color.WHITE);t.typeface=Typeface.DEFAULT_BOLD;row.addView(t,LinearLayout.LayoutParams(0,-2,1f));val p=textView(String.format(java.util.Locale("pt","BR"),"%.1f%%",pct),16f,Color.rgb(110,255,157));p.typeface=Typeface.DEFAULT_BOLD;row.addView(p);box.addView(row);val bar=android.widget.ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);bar.max=1000;bar.progress=(pct*10).toInt();bar.progressDrawable=android.graphics.drawable.ClipDrawable(rounded(Color.rgb(88,236,137),Color.TRANSPARENT,8f),Gravity.LEFT,1);box.addView(bar,LinearLayout.LayoutParams(-1,dp(9)).apply{topMargin=dp(15);bottomMargin=dp(8)});box.addView(textView("${formatBytes(used)} usados de ${formatBytes(total)}",12.5f,Color.rgb(147,192,163)));return box}
+  val green=Color.rgb(19,122,84)
+  val muted=Color.rgb(91,106,98)
+  val active=view.findViewById<View>(R.id.pillHome)
+  active.visibility=View.VISIBLE
+  view.findViewById<View>(R.id.pillFiles).visibility=View.INVISIBLE
+  view.findViewById<View>(R.id.pillTemplates).visibility=View.INVISIBLE
+  view.findViewById<View>(R.id.pillMore).visibility=View.INVISIBLE
+  view.findViewById<ImageView>(R.id.iconHome).setColorFilter(green)
+  view.findViewById<ImageView>(R.id.iconFiles).setColorFilter(muted)
+  view.findViewById<ImageView>(R.id.iconTemplates).setColorFilter(muted)
+  view.findViewById<ImageView>(R.id.iconMore).setColorFilter(muted)
+  view.findViewById<TextView>(R.id.labelHome).setTextColor(green)
+  view.findViewById<TextView>(R.id.labelFiles).setTextColor(muted)
+  view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted)
+  view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
+ } private fun storageCard():View{val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(17),dp(15),dp(17),dp(14));box.background=rounded(Color.rgb(5,27,16),Color.rgb(37,108,67),20f);val stat=android.os.StatFs(android.os.Environment.getDataDirectory().path);val total=stat.totalBytes.toDouble();val free=stat.availableBytes.toDouble();val used=(total-free).coerceAtLeast(0.0);val pct=((used/total)*100.0).coerceIn(0.0,100.0);val row=LinearLayout(this);row.gravity=Gravity.CENTER_VERTICAL;val t=textView("Armazenamento do celular",15f,Color.WHITE);t.typeface=Typeface.DEFAULT_BOLD;row.addView(t,LinearLayout.LayoutParams(0,-2,1f));val p=textView(String.format(java.util.Locale("pt","BR"),"%.1f%%",pct),16f,Color.rgb(110,255,157));p.typeface=Typeface.DEFAULT_BOLD;row.addView(p);box.addView(row);val bar=android.widget.ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);bar.max=1000;bar.progress=(pct*10).toInt();bar.progressDrawable=android.graphics.drawable.ClipDrawable(rounded(Color.rgb(88,236,137),Color.TRANSPARENT,8f),Gravity.LEFT,1);box.addView(bar,LinearLayout.LayoutParams(-1,dp(9)).apply{topMargin=dp(15);bottomMargin=dp(8)});box.addView(textView("${formatBytes(used)} usados de ${formatBytes(total)}",12.5f,Color.rgb(147,192,163)));return box}
  private fun formatBytes(v:Double):String{val units=arrayOf("B","KB","MB","GB","TB");var n=v;var i=0;while(n>=1024&&i<units.lastIndex){n/=1024;i++};return if(i==0)"${n.toInt()} ${units[i]}" else String.format(java.util.Locale("pt","BR"),"%.1f %s",n,units[i])}
  private fun homeCard(title:String,sub:String,icon:String,action:()->Unit):View{val b=LinearLayout(this);b.gravity=Gravity.CENTER_VERTICAL;b.setPadding(dp(15),dp(10),dp(15),dp(10));b.background=rounded(Color.rgb(5,19,12),Color.rgb(29,75,49),18f);val ic=textView(icon,24f,Color.rgb(102,245,150));ic.gravity=Gravity.CENTER;b.addView(ic,LinearLayout.LayoutParams(dp(48),dp(48)).apply{rightMargin=dp(12)});val tx=LinearLayout(this);tx.orientation=LinearLayout.VERTICAL;val a=textView(title,15f,Color.WHITE);a.typeface=Typeface.DEFAULT_BOLD;tx.addView(a);tx.addView(textView(sub,12f,Color.rgb(135,178,150)));b.addView(tx,LinearLayout.LayoutParams(0,-2,1f));b.setOnClickListener{action()};return b}
  private fun bottomNav(selected:Int):View{val nav=LinearLayout(this);nav.gravity=Gravity.CENTER_VERTICAL;nav.setPadding(dp(7),dp(7),dp(7),dp(7));nav.background=rounded(Color.rgb(3,20,12),Color.rgb(25,77,48),22f);fun item(label:String,icon:String,action:()->Unit):TextView{val v=textView(icon+"\\n"+label,11f,Color.rgb(151,190,165));v.gravity=Gravity.CENTER;v.setOnClickListener{action()};return v};nav.addView(item("Início","⌂"){home()},LinearLayout.LayoutParams(0,-1,1f));nav.addView(item("Armazenamento","▱"){storagePage()},LinearLayout.LayoutParams(0,-1,1f));val plus=textView("+",30f,Color.rgb(4,35,18));plus.gravity=Gravity.CENTER;plus.typeface=Typeface.DEFAULT_BOLD;plus.background=rounded(Color.rgb(133,255,171),Color.rgb(190,255,211),50f);plus.setOnClickListener{newDocument()};nav.addView(plus,LinearLayout.LayoutParams(dp(58),dp(58)).apply{gravity=Gravity.CENTER;leftMargin=dp(5);rightMargin=dp(5)});nav.addView(item("Arquivos","▤"){filesPage()},LinearLayout.LayoutParams(0,-1,1f));nav.addView(item("Mais","☰"){morePage()},LinearLayout.LayoutParams(0,-1,1f));return nav}

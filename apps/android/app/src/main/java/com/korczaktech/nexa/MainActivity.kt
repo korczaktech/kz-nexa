@@ -72,7 +72,7 @@ class MainActivity:Activity(){
  private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104)}
  private val p=Path()
  override fun onDraw(c:Canvas){
-  val sx=width/600f*0.90f;val sy=height/180f*0.90f;c.save();c.translate(width*0.05f,height*0.05f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
+  val scale=0.84f;val sx=width/600f*scale;val sy=height/180f*scale;c.save();c.translate(width*(1f-scale)/2f,height*(1f-scale)/2f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
   p.reset();w0(p);c.drawPath(p,paintWhite)
   p.reset();w1(p);c.drawPath(p,paintWhite)
   p.reset();w2(p);c.drawPath(p,paintWhite)
@@ -118,7 +118,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   }
   private fun dpLocal(v:Int)=v*resources.displayMetrics.density
  }
- private fun login(){showAuth("login")}
+ private fun login(){root.setBackgroundColor(Color.rgb(1,9,5));showAuth("login")}
  private fun showAuth(mode:String){
   root.removeAllViews()
   val bg=AuthBackgroundView(this);root.addView(bg,FrameLayout.LayoutParams(-1,-1))

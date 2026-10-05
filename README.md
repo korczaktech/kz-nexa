@@ -184,3 +184,5 @@ O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 **Plataformas:** Desktop App + Desktop Web + iOS PWA + Android PWA + Android Nativo
 
 <!-- CI verification -->
+
+<!-- verify -->

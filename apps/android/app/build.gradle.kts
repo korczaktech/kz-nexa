@@ -32,4 +32,5 @@ android {
 }
 dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 }

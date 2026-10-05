@@ -361,11 +361,11 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   val search=textView("",14f,Color.rgb(15,26,20))
   val input=EditText(this).apply{
    hint="Pesquisar planilhas"
-   hintTextColor=Color.rgb(91,106,98)
+   setHintTextColor(Color.rgb(91,106,98))
    setTextColor(Color.rgb(15,26,20))
    textSize=14f
    background=null
-   singleLine=true
+   setSingleLine(true)
    setPadding(dp(4),0,dp(4),0)
    imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
   }
@@ -485,7 +485,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
     isClickable=true
     setOnClickListener{action()}
    }
-   val color=if(selected)Color.rgb(19,122,84)Color.rgb(91,106,98)
+   val color=if(selected)Color.rgb(19,122,84)else Color.rgb(91,106,98)
    val icon=textView(glyph,21f,color).apply{gravity=Gravity.CENTER}
    val pill=View(this).apply{background=rounded(Color.rgb(227,242,234),Color.TRANSPARENT,10f)}
    wrap.addView(pill,LinearLayout.LayoutParams(dp(46),dp(28)))

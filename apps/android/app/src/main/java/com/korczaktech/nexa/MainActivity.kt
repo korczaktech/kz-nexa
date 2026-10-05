@@ -151,10 +151,12 @@ class MainActivity:Activity(){
  private val updateHandler=Handler(Looper.getMainLooper())
 
  private fun checkForUpdate(){
-  if(updateCheckRunning||updateDialogShowing||isFinishing||isDestroyed)return
+  if(updateCheckRunning||isFinishing||isDestroyed)return
   updateCheckRunning=true
   Thread{
    var retry=false
+   var remoteTag=""
+   var downloadUrl=""
    try{
     val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=30").openConnection() as HttpURLConnection)
     conn.requestMethod="GET"
@@ -163,72 +165,79 @@ class MainActivity:Activity(){
     conn.connectTimeout=12000
     conn.readTimeout=20000
     val code=conn.responseCode
-    if(code !in 200..299){retry=true;return@Thread}
+    if(code !in 200..299)throw IOException("GitHub HTTP $code")
     val body=conn.inputStream.bufferedReader().use{it.readText()}
+    conn.disconnect()
     val releases=JSONArray(body)
-    var bestTag=""
     var bestNumber=-1
     for(i in 0 until releases.length()){
      val r=releases.getJSONObject(i)
      if(r.optBoolean("draft")||r.optBoolean("prerelease"))continue
      val tag=r.optString("tag_name").removePrefix("v").trim()
      val number=Regex("^0\\.0\\.0\\.(\\d+)$").matchEntire(tag)?.groupValues?.getOrNull(1)?.toIntOrNull()?:continue
-     if(number>bestNumber){bestNumber=number;bestTag=tag}
+     if(number>bestNumber){bestNumber=number;remoteTag=tag}
     }
-    if(bestTag.isBlank())return@Thread
-    var apk:String?=null
-    for(i in 0 until releases.length()){
+    if(remoteTag.isBlank())throw IOException("Nenhuma release válida")
+    val release=releases.getJSONObject((0 until releases.length()).firstOrNull{i->
      val r=releases.getJSONObject(i)
-     if(r.optString("tag_name").removePrefix("v").trim()!=bestTag)continue
-     val assets=r.optJSONArray("assets")?:continue
-     for(j in 0 until assets.length()){
-      val a=assets.getJSONObject(j)
-      if(a.optString("name").equals("Korczak-HUB-Nexa-$bestTag.apk",true)){
-       apk=a.optString("browser_download_url")
-       break
-      }
+     !r.optBoolean("draft")&&!r.optBoolean("prerelease")&&r.optString("tag_name").removePrefix("v").trim()==remoteTag
+    }?:throw IOException("Release não encontrada"))
+    val assets=release.optJSONArray("assets")?:throw IOException("Assets ausentes")
+    for(j in 0 until assets.length()){
+     val a=assets.getJSONObject(j)
+     if(a.optString("name").equals("Korczak-HUB-Nexa-$remoteTag.apk",true)){
+      downloadUrl=a.optString("browser_download_url");break
      }
-     break
     }
-    if(apk.isNullOrBlank()){retry=true;return@Thread}
-    if(!isNewer(bestTag,APP_VERSION))return@Thread
-    val downloadUrl=apk
-    runOnUiThread{
-     if(isFinishing||isDestroyed||updateDialogShowing)return@runOnUiThread
-     updateDialogShowing=true
-     val box=LinearLayout(this).apply{
-      orientation=LinearLayout.VERTICAL
-      setPadding(dp(24),dp(22),dp(24),dp(18))
-      background=rounded(Color.rgb(4,18,11),Color.rgb(64,190,113),26f)
+    if(downloadUrl.isBlank())throw IOException("APK da release não encontrado")
+    if(isNewer(remoteTag,APP_VERSION)){
+     val finalTag=remoteTag
+     val finalUrl=downloadUrl
+     runOnUiThread{
+      if(isFinishing||isDestroyed)return@runOnUiThread
+      showUpdateDialog(finalTag,finalUrl)
      }
-     val icon=TextView(this).apply{
-      text="↻";gravity=Gravity.CENTER;textSize=27f;typeface=Typeface.DEFAULT_BOLD
-      setTextColor(Color.rgb(116,255,166));background=rounded(Color.rgb(9,48,28),Color.rgb(64,190,113),18f)
-     }
-     box.addView(icon,LinearLayout.LayoutParams(dp(56),dp(56)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(14)})
-     val title=textView("Atualização disponível",21f,Color.WHITE).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD}
-     box.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
-     val msg=textView("Uma nova versão do Nexa está pronta.\\n\\nAtual: $APP_VERSION\\nNova: $bestTag",14f,Color.rgb(190,222,204)).apply{gravity=Gravity.CENTER}
-     box.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(20)})
-     val actions=LinearLayout(this).apply{gravity=Gravity.CENTER}
-     val later=textView("Agora não",14f,Color.rgb(181,215,195)).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD;isClickable=true;background=rounded(Color.rgb(8,30,19),Color.rgb(55,100,74),15f)}
-     val update=textView("Atualizar agora",14f,Color.rgb(2,20,11)).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD;isClickable=true;background=rounded(Color.rgb(78,230,137),Color.rgb(142,255,183),15f)}
-     actions.addView(later,LinearLayout.LayoutParams(0,dp(50),1f).apply{rightMargin=dp(6)})
-     actions.addView(update,LinearLayout.LayoutParams(0,dp(50),1f).apply{leftMargin=dp(6)})
-     box.addView(actions)
-     val dialog=AlertDialog.Builder(this).setView(box).setCancelable(false).create()
-     later.setOnClickListener{dialog.dismiss()}
-     update.setOnClickListener{dialog.dismiss();downloadUpdate(downloadUrl,bestTag)}
-     dialog.setOnDismissListener{updateDialogShowing=false}
-     dialog.setOnShowListener{dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));dialog.window?.setDimAmount(.24f)}
-     dialog.show()
     }
    }catch(_:Exception){retry=true}
    finally{
     updateCheckRunning=false
-    if(retry&&!updateDialogShowing)updateHandler.postDelayed({checkForUpdate()},5000)
+    if(retry)updateHandler.postDelayed({checkForUpdate()},4000)
    }
   }.start()
+ }
+ private fun showUpdateDialog(tag:String,downloadUrl:String){
+  if(updateDialogShowing||isFinishing||isDestroyed)return
+  updateDialogShowing=true
+  val box=LinearLayout(this).apply{
+   orientation=LinearLayout.VERTICAL
+   setPadding(dp(24),dp(22),dp(24),dp(18))
+   background=rounded(Color.rgb(4,18,11),Color.rgb(64,190,113),26f)
+  }
+  val icon=TextView(this).apply{
+   text="↻";gravity=Gravity.CENTER;textSize=27f;typeface=Typeface.DEFAULT_BOLD
+   setTextColor(Color.rgb(116,255,166));background=rounded(Color.rgb(9,48,28),Color.rgb(64,190,113),18f)
+  }
+  box.addView(icon,LinearLayout.LayoutParams(dp(56),dp(56)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(14)})
+  val title=textView("Atualização disponível",21f,Color.WHITE).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD}
+  box.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+  val msg=textView("Uma nova versão do Nexa está pronta.\n\nAtual: $APP_VERSION\nNova: $tag",14f,Color.rgb(190,222,204)).apply{gravity=Gravity.CENTER}
+  box.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(20)})
+  val actions=LinearLayout(this).apply{gravity=Gravity.CENTER}
+  val later=textView("Agora não",14f,Color.rgb(181,215,195)).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD;isClickable=true;background=rounded(Color.rgb(8,30,19),Color.rgb(55,100,74),15f)}
+  val update=textView("Atualizar agora",14f,Color.rgb(2,20,11)).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD;isClickable=true;background=rounded(Color.rgb(78,230,137),Color.rgb(142,255,183),15f)}
+  actions.addView(later,LinearLayout.LayoutParams(0,dp(50),1f).apply{rightMargin=dp(6)})
+  actions.addView(update,LinearLayout.LayoutParams(0,dp(50),1f).apply{leftMargin=dp(6)})
+  box.addView(actions)
+  val dialog=AlertDialog.Builder(this).setView(box).setCancelable(false).create()
+  later.setOnClickListener{dialog.dismiss()}
+  update.setOnClickListener{dialog.dismiss();downloadUpdate(downloadUrl,tag)}
+  dialog.setOnDismissListener{updateDialogShowing=false}
+  dialog.setOnShowListener{
+   dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+   dialog.window?.setDimAmount(.30f)
+   dialog.window?.attributes=dialog.window?.attributes?.apply{dimAmount=.30f}
+  }
+  dialog.show()
  }
  private fun isNewer(remote:String,current:String):Boolean{
   val a=remote.substringAfterLast(".").toIntOrNull()?:return false

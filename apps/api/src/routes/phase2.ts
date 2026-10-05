@@ -50,7 +50,15 @@ export async function phase2Routes(app:FastifyInstance){
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any;
     const d={workbookId:id,ownerId:req.user!.sub,sheetId:String(b.sheetId||""),name:String(b.name||"Tabela dinâmica"),sourceRange:String(b.sourceRange||"A1:B5"),rowField:String(b.rowField||""),columnField:b.columnField?String(b.columnField):undefined,valueField:String(b.valueField||""),aggregation:["sum","count","average","min","max"].includes(b.aggregation)?b.aggregation:"sum",createdAt:now(),updatedAt:now()};
     if(!d.rowField||!d.valueField)return sendError(res,"INVALID_PIVOT");
-    const r=await productDb().collection("pivots").insertOne(d);return res.code(201).send({...d,_id:String(r.insertedId)});
+    const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");
+    const wb:any=await productDb().collection("workbooks").findOne({_id:wid});const sheet=wb?.sheets?.find((s:any)=>s.id===d.sheetId)||wb?.sheets?.[0];
+    if(!sheet)return sendError(res,"INVALID_SHEET");
+    const [ra,rb]=d.sourceRange.split(":");const pm=(k:string)=>{const m=/^([A-Z]+)(\\d+)$/i.exec(k);if(!m)throw Error("RANGE");let col=0;for(const ch of m[1].toUpperCase())col=col*26+ch.charCodeAt(0)-64;return{r:Number(m[2])-1,c:col-1}};const a=pm(ra),z=pm(rb||ra),rows:string[][]=[];
+    for(let rr=Math.min(a.r,z.r);rr<=Math.max(a.r,z.r);rr++){const row:string[]=[];for(let cc=Math.min(a.c,z.c);cc<=Math.max(a.c,z.c);cc++)row.push(String(sheet.cells?.[columnName(cc)+(rr+1)]?.input||""));rows.push(row)}
+    const header=rows.shift()||[],ri=header.indexOf(d.rowField),vi=header.indexOf(d.valueField);if(ri<0||vi<0)return sendError(res,"INVALID_PIVOT_FIELDS");
+    const groups=new Map<string,number[]>();for(const row of rows){const key=row[ri]??"";const n=Number((row[vi]??"").replace(",","."));if(!groups.has(key))groups.set(key,[]);if(Number.isFinite(n))groups.get(key)!.push(n)}
+    const result=[...groups.entries()].map(([key,vals])=>{const value=d.aggregation==="count"?vals.length:d.aggregation==="average"?(vals.length?vals.reduce((a,v)=>a+v,0)/vals.length:0):d.aggregation==="min"?(vals.length?Math.min(...vals):0):d.aggregation==="max"?(vals.length?Math.max(...vals):0):vals.reduce((a,v)=>a+v,0);return{key,value}});
+    const stored={...d,result};const r=await productDb().collection("pivots").insertOne(stored);return res.code(201).send({...stored,_id:String(r.insertedId)});
   });
 
   app.post("/v1/workbooks/:id/dashboards",{preHandler:requireAuth},async(req,res)=>{
@@ -118,8 +126,9 @@ export async function phase2Routes(app:FastifyInstance){
   app.post("/v1/workbooks/:id/sync",{preHandler:requireAuth},async(req,res)=>{
     const id=String((req.params as any).id);if(!await access(req,id,"editor"))return sendError(res,"FORBIDDEN",403);
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any;
-    const d={workbookId:id,ownerId:req.user!.sub,sourceDevice:String(b.sourceDevice||"unknown").slice(0,100),clientRevision:Number(b.clientRevision)||0,serverTime:now(),status:"accepted"};
-    return res.send(d);
+    const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");const existing:any=await productDb().collection("workbooks").findOne({_id:wid});if(!existing)return sendError(res,"NOT_FOUND",404);
+    const incoming=b.workbook&&typeof b.workbook==="object"?b.workbook:null;let applied=false;if(incoming&&Array.isArray(incoming.sheets)){const clean={...incoming,ownerId:String(existing.ownerId),_id:existing._id,createdAt:existing.createdAt,updatedAt:now()};await productDb().collection("workbooks").replaceOne({_id:wid},clean);applied=true;}
+    const d={workbookId:id,ownerId:String(existing.ownerId),sourceDevice:String(b.sourceDevice||"unknown").slice(0,100),clientRevision:Number(b.clientRevision)||0,serverRevision:Number(b.clientRevision)||0,serverTime:now(),status:applied?"synced":"unchanged",workbook:applied?clean:existing};return res.send(d);
   });
 
   app.post("/v1/workbooks/:id/analysis",{preHandler:requireAuth},async(req,res)=>{
@@ -134,6 +143,8 @@ export async function phase2Routes(app:FastifyInstance){
     if(b.sort){const ci=colIndex(String(b.sort.column));filtered.sort((x,y)=>{const nx=Number(x[ci]?.replace(",",".")),ny=Number(y[ci]?.replace(",","."));const cmp=Number.isFinite(nx)&&Number.isFinite(ny)?nx-ny:String(x[ci]??"").localeCompare(String(y[ci]??""));return b.sort.direction==="desc"?-cmp:cmp})}
     const limit=Math.max(1,Math.min(10000,Number(b.limit)||1000));return res.send({headers:header,rows:filtered.slice(0,limit),total:filtered.length});
   });
+
+  app.post("/v1/templates/:id/workbooks",{preHandler:requireAuth},async(req,res)=>{const id=String((req.params as any).id);const templates:any={blank:{name:"Nova planilha"},budget:{name:"Orçamento pessoal"},project:{name:"Controle de projeto"}};const t=templates[id];if(!t)return sendError(res,"NOT_FOUND",404);const nowIso=now();const workbook:any={ownerId:req.user!.sub,name:t.name,schemaVersion:4,sheets:[{id:crypto.randomUUID(),name:"Planilha 1",cells:{},columnWidths:{},rowHeights:{},frozenRows:0,frozenColumns:0,hiddenRows:{},hiddenColumns:{},mergedRanges:[]}],activeSheetId:"",createdAt:nowIso,updatedAt:nowIso};workbook.activeSheetId=workbook.sheets[0].id;if(id==="budget"){workbook.sheets[0].cells={A1:{input:"Mês"},B1:{input:"Receitas"},C1:{input:"Despesas"},D1:{input:"Saldo"}}}if(id==="project"){workbook.sheets[0].cells={A1:{input:"Tarefa"},B1:{input:"Responsável"},C1:{input:"Prazo"},D1:{input:"Status"}}}const r=await productDb().collection("workbooks").insertOne(workbook);return res.code(201).send({...workbook,_id:String(r.insertedId)});});
 
   app.get("/v1/templates",{preHandler:requireAuth},async(_req,res)=>{
     return res.send([

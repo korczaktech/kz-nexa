@@ -174,7 +174,7 @@ O Nexa não será construído como um simples clone. Excel e Sheets são referê
 O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 
 ## Status inicial
-**Fase atual:** Fase 1 — Núcleo (implementação em validação)  
+**Fase atual:** Fase 1 — Núcleo (implementada e validada)  
 **Produto:** Korczak Nexa  
 **Idioma:** Português do Brasil  
 **Orçamento:** R$ 0  

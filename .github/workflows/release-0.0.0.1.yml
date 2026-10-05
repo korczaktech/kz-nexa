@@ -22,21 +22,13 @@ jobs:
         id: version
         shell: bash
         run: |
-          # Reset the public Nexa sequence after the bad counter-based releases.
-          # The first post-reset commit is 0.0.0.2; every later commit increments by one.
+          # Every commit on main gets exactly one public release.
           COMMITS_AFTER_RESET=$(git rev-list --count 6b3c0a21d3ac28b34378d9b4452e966c67dd8f72..HEAD)
           VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
           if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
           VERSION="0.0.0.${VERSION_NUMBER}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXA_VERSION=$VERSION"
-
-      - name: Remove legacy counter releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete 0.0.0.651 --cleanup-tag --yes || true
-          gh release delete 0.0.0.652 --cleanup-tag --yes || true
 
       - uses: actions/setup-java@v4
         with:

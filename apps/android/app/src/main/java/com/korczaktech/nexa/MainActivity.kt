@@ -338,7 +338,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(dp(22),dp(42),dp(22),dp(30))
   val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(24),dp(26),dp(24),dp(24))
   card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=0f
-  val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
+  val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_login_logo);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
   val word=NexaWordmarkView(this);word.translationY=-dp(7).toFloat();card.addView(word,LinearLayout.LayoutParams(-1,dp(92)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER

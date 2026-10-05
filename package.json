@@ -1,7 +1,7 @@
 {
   "name": "kz-nexa",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Korczak Nexa — plataforma de planilhas da Korczak Technologies.",
   "workspaces": [
     "apps/*",

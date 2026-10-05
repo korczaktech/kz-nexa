@@ -68,39 +68,25 @@ class MainActivity:Activity(){
   if(ss.isEmpty())ss.add(Sheet(name="Planilha 1"));val id=j.optString("activeSheetId");val ai=ss.indexOfFirst{x->x.id==id};return Book(j.optString("_id").ifBlank{null},j.optString("name","Nova planilha"),ss,if(ai<0)0 else ai)
  }
  private fun req(path:String,method:String,body:String?,auth:String?):Pair<Int,String>{val c=URL(API+path).openConnection() as HttpURLConnection;c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;if(auth!=null)c.setRequestProperty("Authorization","Bearer "+auth);c.setRequestProperty("Content-Type","application/json");if(body!=null){c.doOutput=true;c.outputStream.use{it.write(body.toByteArray())}};val code=c.responseCode;val i=if(code>=400)c.errorStream else c.inputStream;return code to i.bufferedReader().use{it.readText()}}
- inner class Grid:View(this){var zoom=1f;var selStart=0;var selEnd=0;var selColStart=0;var selColEnd=0;val cw=130f;val rh=52f;val head=48f;val p=Paint(1)
+ inner class Grid:View(this){var zoom=1f;var panX=0f;var panY=0f;var selStart=0;var selEnd=0;var selColStart=0;var selColEnd=0;val cw=130f;val rh=52f;val head=48f;val p=Paint(1)
    override fun onDraw(c:Canvas){
-    val s=book!!.sheets[book!!.active];c.save();c.scale(zoom,zoom);p.textSize=14f;var y=head
-    for(r in 0 until 200){
-      if(s.hiddenRows.contains(r)||collapsedRows.any{z->r>=z&&s.groupedRows.contains(z)})continue
-      p.color=Color.LTGRAY;c.drawRect(0f,y,head,y+rh,p);p.color=Color.DKGRAY;c.drawText((r+1).toString(),8f,y+32,p)
-      var x=head
-      for(k in 0 until 50){
-       if(s.hiddenCols.contains(k)||collapsedCols.any{z->k>=z&&s.groupedCols.contains(z)})continue
-       val ce=s.cells[key(r,k)]
-       p.color=if(r in selStart..selEnd&&k in selColStart..selColEnd)Color.rgb(220,245,230)else Color.WHITE
-       c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.STROKE;p.color=Color.LTGRAY;c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.FILL
-       if(ce!=null){
-        val rule=s.rules.firstOrNull{ruleMatch(ce.input,key(r,k),it)}
-        p.color=rule?.bg?:ce.background;c.drawRect(x+1,y+1,x+cw-1,y+rh-1,p)
-        if(ce.borderTop){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x+cw,y,p);p.style=Paint.Style.FILL}
-        if(ce.borderRight){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x+cw,y,x+cw,y+rh,p);p.style=Paint.Style.FILL}
-        if(ce.borderBottom){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y+rh,x+cw,y+rh,p);p.style=Paint.Style.FILL}
-        if(ce.borderLeft){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x,y+rh,p);p.style=Paint.Style.FILL}
-        p.color=rule?.fg?:ce.fontColor;p.textSize=ce.fontSize
-        p.typeface=if(ce.bold&&ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.BOLD_ITALIC)else if(ce.bold)Typeface.DEFAULT_BOLD else if(ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.ITALIC)else Typeface.DEFAULT
-        val tx=showValue(ce.input,s);val tw=p.measureText(tx);val txp=if(ce.align==1)x+(cw-tw)/2 else if(ce.align==2)x+cw-tw-7 else x+7;c.drawText(tx,txp,y+32,p);p.typeface=Typeface.DEFAULT
-       }
-       x+=cw
-      }
-      y+=rh
+    val s=book!!.sheets[book!!.active];c.save();c.scale(zoom,zoom);p.textSize=14f
+    fun visible(r:Int,k:Int):Boolean{val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;val y=head+r*rh-if(r>=s.frozenRows)panY else 0f;return x+cw>=head&&x<=width/zoom&&y+rh>=head&&y<=height/zoom}
+    for(r in 0 until 200)for(k in 0 until 50){
+     if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
+     val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;val y=head+r*rh-if(r>=s.frozenRows)panY else 0f
+     val ce=s.cells[key(r,k)];p.color=if(r in selStart..selEnd&&k in selColStart..selColEnd)Color.rgb(220,245,230)else Color.WHITE;c.drawRect(x,y,x+cw,y+rh,p)
+     p.style=Paint.Style.STROKE;p.color=Color.LTGRAY;c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.FILL
+     if(ce!=null){val rule=s.rules.firstOrNull{ruleMatch(ce.input,key(r,k),it)};p.color=rule?.bg?:ce.background;c.drawRect(x+1,y+1,x+cw-1,y+rh-1,p)
+      p.color=rule?.fg?:ce.fontColor;p.textSize=ce.fontSize;p.typeface=if(ce.bold&&ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.BOLD_ITALIC)else if(ce.bold)Typeface.DEFAULT_BOLD else if(ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.ITALIC)else Typeface.DEFAULT
+      val tx=formatValue(showValue(ce.input,s),ce.numberFormat);val tw=p.measureText(tx);val txp=if(ce.align==1)x+(cw-tw)/2 else if(ce.align==2)x+cw-tw-7 else x+7;c.drawText(tx,txp,y+32,p);p.typeface=Typeface.DEFAULT
+      if(ce.borderTop){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x+cw,y,p);p.style=Paint.Style.FILL};if(ce.borderRight){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x+cw,y,x+cw,y+rh,p);p.style=Paint.Style.FILL};if(ce.borderBottom){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y+rh,x+cw,y+rh,p);p.style=Paint.Style.FILL};if(ce.borderLeft){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x,y+rh,p);p.style=Paint.Style.FILL}
+     }
     }
-    p.color=Color.rgb(240,240,240);c.drawRect(0f,0f,width.toFloat(),head,p);var x=head
-    for(k in 0 until 50){
-      if(s.hiddenCols.contains(k)||collapsedCols.any{z->k>=z&&s.groupedCols.contains(z)})continue
-      p.color=Color.DKGRAY;p.textSize=14f;c.drawText(col(k),x+8,30f,p);x+=cw
-    }
-    c.restore()
+    p.color=Color.rgb(240,240,240);c.drawRect(0f,0f,width.toFloat(),head,p);var hx=head
+    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;if(x+cw>=head&&x<=width/zoom){p.color=Color.DKGRAY;p.textSize=14f;c.drawText(col(k),x+8,30f,p)}}
+    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){val y=head+r*rh-if(r>=s.frozenRows)panY else 0f;if(y+rh>=head&&y<=height/zoom){p.color=Color.DKGRAY;p.textSize=14f;c.drawText((r+1).toString(),8f,y+32,p)}}
+    p.color=Color.rgb(14,28,21);c.drawRect(0f,0f,head,head,p);c.restore()
    }
    private fun ruleMatch(v:String,k:String,r:Rule):Boolean{
     if(!keyInRange(k,r.range))return false
@@ -159,7 +145,8 @@ class MainActivity:Activity(){
     private fun cellPoint(k:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(k.trim())?:throw Exception("ref");var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
    }
   private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
-  override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;if(e.action==MotionEvent.ACTION_DOWN){selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};if(e.action==MotionEvent.ACTION_MOVE){selEnd=locR(y);selColEnd=locC(x);invalidate();return true};if(e.action==MotionEvent.ACTION_UP){if(y>=head)edit(selStart,selColStart);return true};return true}
+  private var lastX=0f;private var lastY=0f;private var panning=false
+  override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;when(e.action){MotionEvent.ACTION_DOWN->{lastX=x;lastY=y;panning=false;selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};MotionEvent.ACTION_MOVE->{if(e.pointerCount>=2){panning=true;panX=(panX-(x-lastX)).coerceAtLeast(0f);panY=(panY-(y-lastY)).coerceAtLeast(0f);lastX=x;lastY=y;invalidate();return true};selEnd=locR(y);selColEnd=locC(x);invalidate();return true};MotionEvent.ACTION_UP->{if(!panning&&y>=head)edit(selStart,selColStart);return true}};return true}
   private fun locR(y:Float):Int{var z=head;for(r in 0 until 200){if(book!!.sheets[book!!.active].hiddenRows.contains(r))continue;if(y>=z&&y<z+rh)return r;z+=rh};return 199}
   private fun locC(x:Float):Int{var z=head;for(k in 0 until 50){if(book!!.sheets[book!!.active].hiddenCols.contains(k))continue;if(x>=z&&x<z+cw)return k;z+=cw};return 49}
  }

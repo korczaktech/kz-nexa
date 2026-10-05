@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test dist/routes/auth.test.js dist/routes/workbooks.auth.test.js"
+    "test": "node dist/verify-phase1.js"
   },
   "dependencies": {
     "@kz-nexa/shared": "file:../../packages/shared",

@@ -16,7 +16,10 @@ android {
             commandLine("git", "rev-list", "--count", "0.0.0.652..HEAD")
         }.standardOutput.asText.get().trim().toIntOrNull() ?: 0
         val nexVersion = (commitsAfterReset - 2).coerceAtLeast(2)
-        versionCode = nexVersion
+        val legacySafeVersionCode = providers.exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+        }.standardOutput.asText.get().trim().toIntOrNull()?.coerceAtLeast(1) ?: nexVersion
+        versionCode = legacySafeVersionCode
         versionName = "0.0.0.$nexVersion"
     }
     compileOptions {

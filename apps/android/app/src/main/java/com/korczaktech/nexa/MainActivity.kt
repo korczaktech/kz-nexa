@@ -7,17 +7,20 @@ private data class Validation(var type:String,var values:List<String> = emptyLis
 private data class Sheet(val id:String=UUID.randomUUID().toString(),var name:String,var cells:MutableMap<String,Cell> = mutableMapOf(),var frozenRows:Int=0,var frozenCols:Int=0,var hiddenRows:MutableSet<Int> = mutableSetOf(),var hiddenCols:MutableSet<Int> = mutableSetOf(),var merged:MutableSet<String> = mutableSetOf(),var rules:MutableList<Rule> = mutableListOf(),var validations:MutableMap<String,Validation> = mutableMapOf(),var groupedRows:MutableSet<Int> = mutableSetOf(),var groupedCols:MutableSet<Int> = mutableSetOf())
 private data class Book(var id:String?=null,var name:String="Nova planilha",var sheets:MutableList<Sheet>,var active:Int=0)
 class MainActivity:Activity(){
- private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME
+ private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE
  override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},1200)}
  private fun checkForUpdate(){
   Thread{try{
-   val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection
+   val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=100").openConnection() as HttpURLConnection
    c.requestMethod="GET";c.setRequestProperty("Accept","application/vnd.github+json");c.connectTimeout=8000;c.readTimeout=10000
    if(c.responseCode !in 200..299)return@Thread
-   val j=JSONObject(c.inputStream.bufferedReader().use{it.readText()});val tag=j.optString("tag_name").removePrefix("v")
-   val assets=j.optJSONArray("assets");var apk:String?=null
+   val releases=JSONArray(c.inputStream.bufferedReader().use{it.readText()});var bestTag="";var bestDate=""
+   for(i in 0 until releases.length()){val r=releases.getJSONObject(i);if(r.optBoolean("draft")||r.optBoolean("prerelease"))continue;val candidate=r.optString("tag_name").removePrefix("v");if(!Regex("^0\\.0\\.0\\.\\d+$").matches(candidate))continue;val date=r.optString("published_at");if(date>bestDate){bestDate=date;bestTag=candidate}}
+   val tag=bestTag;if(tag.isBlank())return@Thread
+   val assets=releases.getJSONObject((0 until releases.length()).firstOrNull{releases.getJSONObject(it).optString("tag_name").removePrefix("v")==tag}?:return@Thread).optJSONArray("assets");var apk:String?=null
    if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
-   if(apk.isNullOrBlank()||!isNewer(tag,APP_VERSION))return@Thread
+   val legacyInstalled=APP_VERSION_CODE>=651
+   if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
    runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
   }catch(_:Exception){}}.start()
  }

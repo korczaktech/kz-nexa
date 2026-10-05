@@ -29,7 +29,7 @@ class MainActivity:Activity(){
   Toast.makeText(this,"Baixando Nexa $tag...",Toast.LENGTH_LONG).show()
   Thread{try{
    val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
-   val rq=android.app.DownloadManager.Request(Uri.parse(url)).setTitle("Korczak Nexa $tag").setDescription("Atualização do aplicativo").setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setMimeType("application/vnd.android.package-archive").setDestinationInExternalFilesDir(this,android.os.Environment.DIRECTORY_DOWNLOADS,"korczak-nexa-$tag.apk")
+   val rq=android.app.DownloadManager.Request(Uri.parse(url)).setTitle("Korczak Nexa $tag").setDescription("Atualização do aplicativo").setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setMimeType("application/vnd.android.package-archive").setDestinationInExternalFilesDir(this,android.os.Environment.DIRECTORY_DOWNLOADS,"Korczak-HUB-Nexa-$tag.apk")
    val id=dm.enqueue(rq);android.os.Handler(mainLooper).post(object:Runnable{override fun run(){
     val q=dm.query(android.app.DownloadManager.Query().setFilterById(id));if(!q.moveToFirst()){q.close();android.os.Handler(mainLooper).postDelayed(this,1000);return}
     val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));q.close()

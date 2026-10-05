@@ -1,13 +1,16 @@
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt">
 <aapt:attr name="android:drawable"><vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-<group android:name="matrixRain">
+<path android:fillColor="#06100B" android:pathData="M0,0h108v108h-108z"/>
+<group android:name="matrixRain" android:translateX="4.5" android:translateY="8.5">
 <path android:fillColor="#70FFAA" android:pathData="M12,0h4v28h-4zM22,14h4v30h-4zM32,-8h4v32h-4zM72,4h4v30h-4zM84,-12h4v34h-4zM94,18h4v28h-4z"/>
 </group>
+<group android:translateX="4.5" android:translateY="8.5">
 <path android:fillColor="#07130D" android:strokeColor="#3D584A" android:strokeWidth="2" android:pathData="M27,20L68,11l14,46L41,66Z"/>
 <path android:fillColor="#0A1911" android:strokeColor="#607C6C" android:strokeWidth="2" android:pathData="M22,27L63,18l14,46L36,73Z"/>
 <path android:fillColor="#050B08" android:strokeColor="#FFFFFF" android:strokeWidth="2.7" android:pathData="M17,34L58,25l14,46L31,80Z"/>
 <path android:strokeColor="#70FFAA" android:strokeWidth="4.5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="@android:color/transparent" android:pathData="M35,79L45,51L55,71L68,34"/>
 <path android:fillColor="#B8FFD0" android:pathData="M32,76h6v6h-6zM42,48h6v6h-6zM52,68h6v6h-6zM65,31h6v6h-6z"/>
+</group>
 </vector></aapt:attr>
 <target android:name="matrixRain" android:animation="@animator/nexa_matrix_drop"/>
 </animated-vector>

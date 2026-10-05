@@ -34,7 +34,7 @@ class MainActivity:Activity(){
   for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i];return false
  }
  private fun downloadUpdate(url:String,tag:String){
-  Toast.makeText(this,"Baixando Nexa $tag...",Toast.LENGTH_LONG).show()
+  showUpdateToast("Baixando Nexa $tag...",false)
   Thread{try{
    val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
    val rq=android.app.DownloadManager.Request(Uri.parse(url)).setTitle("Korczak Nexa $tag").setDescription("Atualização do aplicativo").setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED).setMimeType("application/vnd.android.package-archive").setDestinationInExternalFilesDir(this,android.os.Environment.DIRECTORY_DOWNLOADS,"Korczak-HUB-Nexa-$tag.apk")
@@ -42,12 +42,13 @@ class MainActivity:Activity(){
     val q=dm.query(android.app.DownloadManager.Query().setFilterById(id));if(!q.moveToFirst()){q.close();android.os.Handler(mainLooper).postDelayed(this,1000);return}
     val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));q.close()
     if(status==android.app.DownloadManager.STATUS_SUCCESSFUL){val uri=dm.getUriForDownloadedFile(id);if(uri!=null)startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION));return}
-    if(status==android.app.DownloadManager.STATUS_FAILED){Toast.makeText(this@MainActivity,"Falha ao baixar a atualização.",Toast.LENGTH_LONG).show();return}
+    if(status==android.app.DownloadManager.STATUS_FAILED){showUpdateToast("Falha ao baixar a atualização.",true);return}
     android.os.Handler(mainLooper).postDelayed(this,1000)
    }})
-  }catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha ao iniciar atualização.",Toast.LENGTH_LONG).show()}}}.start()
+  }catch(_:Exception){runOnUiThread{showUpdateToast("Falha ao iniciar atualização.",true)}}}.start()
  }
 
+ private fun showUpdateToast(message:String,error:Boolean){val box=LinearLayout(this);box.orientation=LinearLayout.HORIZONTAL;box.gravity=Gravity.CENTER_VERTICAL;box.setPadding(dp(16),dp(10),dp(18),dp(10));box.background=rounded(if(error)Color.rgb(35,16,17)else Color.rgb(6,22,14),if(error)Color.rgb(150,65,75)else Color.rgb(73,220,128),18f);val icon=TextView(this);icon.text=if(error)"!" else "↻";icon.gravity=Gravity.CENTER;icon.textSize=18f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(if(error)Color.rgb(255,150,160)else Color.rgb(108,255,148));box.addView(icon,LinearLayout.LayoutParams(dp(30),dp(30)).apply{rightMargin=dp(10)});val tv=textView(message,13.5f,Color.WHITE);tv.typeface=Typeface.DEFAULT_BOLD;box.addView(tv,LinearLayout.LayoutParams(-2,-2));val toast=Toast(this);toast.duration=Toast.LENGTH_LONG;toast.view=box;toast.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(82));toast.show()}
  private fun dp(v:Int)=((v*resources.displayMetrics.density)+0.5f).toInt()
  private fun textView(text:String,size:Float,color:Int=Color.WHITE):TextView{val v=TextView(this);v.text=text;v.textSize=size;v.setTextColor(color);return v}
  private fun rounded(fill:Int,stroke:Int=Color.TRANSPARENT,radius:Float=18f):android.graphics.drawable.GradientDrawable=android.graphics.drawable.GradientDrawable().apply{setColor(fill);if(stroke!=Color.TRANSPARENT)setStroke(dp(1),stroke);cornerRadius=dp(radius.toInt()).toFloat()}

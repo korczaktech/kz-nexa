@@ -3,14 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "description": "Korczak Nexa — plataforma de planilhas da Korczak Technologies.",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace=@kz-nexa/web",
     "dev:api": "npm run dev --workspace=@kz-nexa/api",
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspace=@kz-nexa/api && npm run test --workspace=@kz-nexa/shared && npm run test --workspace=@kz-nexa/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -8,8 +8,12 @@ private data class Sheet(val id:String=UUID.randomUUID().toString(),var name:Str
 private data class Book(var id:String?=null,var name:String="Nova planilha",var sheets:MutableList<Sheet>,var active:Int=0)
 class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE
- override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},1200)}
+ override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},500)}
+ override fun onResume(){super.onResume();if(::root.isInitialized)android.os.Handler(mainLooper).postDelayed({checkForUpdate()},350)}
+ private var updateCheckRunning=false
  private fun checkForUpdate(){
+  if(updateCheckRunning)return
+  updateCheckRunning=true
   Thread{try{
    val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=100").openConnection() as HttpURLConnection
    c.requestMethod="GET";c.setRequestProperty("Accept","application/vnd.github+json");c.connectTimeout=8000;c.readTimeout=10000
@@ -22,7 +26,7 @@ class MainActivity:Activity(){
    val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
    if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
    runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
-  }catch(_:Exception){}}.start()
+  }catch(_:Exception){}finally{updateCheckRunning=false}}.start()
  }
  private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}
   private fun isNewer(remote:String,current:String):Boolean{
@@ -64,9 +68,9 @@ class MainActivity:Activity(){
   return b
  }
  private class NexaWordmarkView(context:android.content.Context):View(context){
-  private val white=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=58f;color=Color.WHITE}
-  private val green=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=58f;color=Color.rgb(75,226,128)}
-  private val arrow=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.STROKE;strokeWidth=5f;strokeCap=Paint.Cap.ROUND;strokeJoin=Paint.Join.ROUND;color=Color.rgb(75,226,128)}
+  private val white=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=72f;color=Color.WHITE}
+  private val green=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=72f;color=Color.rgb(75,226,128)}
+  private val arrow=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.STROKE;strokeWidth=6f;strokeCap=Paint.Cap.ROUND;strokeJoin=Paint.Join.ROUND;color=Color.rgb(75,226,128)}
   override fun onDraw(c:Canvas){
    val ne="Ne";val xa="xa";val total=white.measureText(ne)+green.measureText(xa);val x=(width-total)/2f;val base=height/2f-(white.ascent()+white.descent())/2f
    c.drawText(ne,x,base,white);val xStart=x+white.measureText(ne);c.drawText(xa,xStart,base,green)
@@ -100,7 +104,7 @@ class MainActivity:Activity(){
   card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=dp(14).toFloat()
   val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
-  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(66)).apply{bottomMargin=dp(2)})
+  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(88)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER
   card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
   val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD

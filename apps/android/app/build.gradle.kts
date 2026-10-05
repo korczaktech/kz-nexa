@@ -9,6 +9,9 @@ android {
         applicationId = "com.korczaktech.nexa"
         minSdk = 26
         targetSdk = 35
+    buildFeatures {
+        buildConfig = true
+    }
         val commitCount = providers.exec {
             commandLine("git", "rev-list", "--count", "HEAD")
         }.standardOutput.asText.get().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1

@@ -3,8 +3,8 @@ for(const p of ["dist/index.html","dist/manifest.webmanifest","dist/sw.js","dist
 const html=await readFile("dist/index.html","utf8");
 if(!html.includes("Korczak Nexa"))throw Error("dist/index.html inválido");
 if(!html.includes("/kz-nexa/"))throw Error("GitHub Pages base path ausente");
-const manifest=await readFile("dist/manifest.webmanifest","utf8");
-if(!manifest.includes('"start_url":"/kz-nexa/"')||!manifest.includes('"scope":"/kz-nexa/"'))throw Error("PWA manifest fora do base path");
+const manifest=JSON.parse(await readFile("dist/manifest.webmanifest","utf8"));
+if(manifest.start_url!=="/kz-nexa/"||manifest.scope!=="/kz-nexa/"||manifest.icons?.[0]?.src!=="/kz-nexa/icon.svg")throw Error("PWA manifest fora do base path");
 const sw=await readFile("dist/sw.js","utf8");
 if(!sw.includes('const BASE = "/kz-nexa/"'))throw Error("Service worker fora do base path");
 const app=await readFile("src/App.tsx","utf8");

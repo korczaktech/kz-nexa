@@ -60,33 +60,65 @@ private class MatrixSplashView(context: android.content.Context) : View(context)
         paint.style = Paint.Style.STROKE
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
+
+        // Premium Nexa mark: layered sheets + ascending data path.
         paint.strokeWidth = dp(4).toFloat()
-        paint.color = Color.rgb(91, 120, 103)
+        paint.color = Color.rgb(61, 88, 74)
         val back = Path()
-        back.moveTo(cx - dp(52), cy - dp(55))
-        back.lineTo(cx + dp(15), cy - dp(78))
-        back.lineTo(cx + dp(40), cy - dp(8))
-        back.lineTo(cx - dp(28), cy + dp(15))
+        back.moveTo(cx - dp(43), cy - dp(54))
+        back.lineTo(cx + dp(22), cy - dp(69))
+        back.lineTo(cx + dp(43), cy + dp(2))
+        back.lineTo(cx - dp(22), cy + dp(17))
         back.close()
         canvas.drawPath(back, paint)
 
         paint.strokeWidth = dp(4).toFloat()
+        paint.color = Color.rgb(96, 124, 108)
+        val middle = Path()
+        middle.moveTo(cx - dp(48), cy - dp(43))
+        middle.lineTo(cx + dp(17), cy - dp(58))
+        middle.lineTo(cx + dp(38), cy + dp(13))
+        middle.lineTo(cx - dp(27), cy + dp(28))
+        middle.close()
+        canvas.drawPath(middle, paint)
+
+        paint.strokeWidth = dp(5).toFloat()
         paint.color = Color.WHITE
         val sheet = Path()
-        sheet.moveTo(cx - dp(58), cy - dp(42))
-        sheet.lineTo(cx + dp(8), cy - dp(65))
-        sheet.lineTo(cx + dp(31), cy + dp(2))
-        sheet.lineTo(cx - dp(35), cy + dp(26))
+        sheet.moveTo(cx - dp(54), cy - dp(32))
+        sheet.lineTo(cx + dp(11), cy - dp(47))
+        sheet.lineTo(cx + dp(32), cy + dp(24))
+        sheet.lineTo(cx - dp(33), cy + dp(39))
         sheet.close()
         canvas.drawPath(sheet, paint)
 
-        paint.strokeWidth = dp(8).toFloat()
-        paint.color = Color.rgb(105, 255, 154)
+        paint.strokeWidth = dp(2).toFloat()
+        paint.color = Color.rgb(65, 96, 82)
+        for(i in 0..2){
+            val y = cy - dp(4) + i * dp(13)
+            canvas.drawLine(cx - dp(38) + i * dp(3), y, cx - dp(17) + i * dp(3), y - dp(5), paint)
+        }
+        for(i in 0..2){
+            val y = cy - dp(11) + i * dp(13)
+            canvas.drawLine(cx - dp(4) + i * dp(3), y, cx + dp(16) + i * dp(3), y - dp(5), paint)
+        }
+
+        paint.strokeWidth = dp(9).toFloat()
+        paint.color = Color.rgb(11, 58, 35)
+        val dataShadow = Path()
+        dataShadow.moveTo(cx - dp(29), cy + dp(31))
+        dataShadow.lineTo(cx - dp(14), cy - dp(11))
+        dataShadow.lineTo(cx + dp(1), cy + dp(20))
+        dataShadow.lineTo(cx + dp(23), cy - dp(42))
+        canvas.drawPath(dataShadow, paint)
+
+        paint.strokeWidth = dp(6).toFloat()
+        paint.color = Color.rgb(112, 255, 170)
         val data = Path()
-        data.moveTo(cx - dp(28), cy + dp(18))
-        data.lineTo(cx - dp(13), cy - dp(22))
-        data.lineTo(cx + dp(2), cy + dp(8))
-        data.lineTo(cx + dp(24), cy - dp(38))
+        data.moveTo(cx - dp(29), cy + dp(31))
+        data.lineTo(cx - dp(14), cy - dp(11))
+        data.lineTo(cx + dp(1), cy + dp(20))
+        data.lineTo(cx + dp(23), cy - dp(42))
         canvas.drawPath(data, paint)
 
         paint.style = Paint.Style.FILL

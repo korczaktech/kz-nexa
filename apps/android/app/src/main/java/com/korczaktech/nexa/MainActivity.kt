@@ -128,7 +128,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=0f
   val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
-  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(92)).apply{bottomMargin=dp(5)})
+  val word=NexaWordmarkView(this);word.translationY=-dp(7).toFloat();card.addView(word,LinearLayout.LayoutParams(-1,dp(92)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER
   card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
   val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD
@@ -167,7 +167,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   if(mode=="login"){link("Criar conta","register");link("Recuperar acesso","recover")}else if(mode!="recover"){link("Recuperar acesso","recover")}
   card.addView(links)
   l.addView(card,LinearLayout.LayoutParams(-1,-2).apply{gravity=Gravity.CENTER_HORIZONTAL})
-  val footer=textView("KORCZAK HUB",11f,Color.rgb(85,139,105));footer.gravity=Gravity.CENTER;l.addView(footer,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(22)})
+  val footer=textView("KORCZAK HUB",11.5f,Color.rgb(108,220,148));footer.gravity=Gravity.CENTER;footer.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);if(android.os.Build.VERSION.SDK_INT>=21)footer.letterSpacing=0.22f;footer.setPadding(0,dp(8),0,dp(8));val footerWrap=LinearLayout(this);footerWrap.gravity=Gravity.CENTER;val line=View(this);line.setBackgroundColor(Color.rgb(43,116,73));footerWrap.addView(line,LinearLayout.LayoutParams(dp(34),dp(1)).apply{rightMargin=dp(10)});footerWrap.addView(footer,LinearLayout.LayoutParams(-2,-2));val line2=View(this);line2.setBackgroundColor(Color.rgb(43,116,73));footerWrap.addView(line2,LinearLayout.LayoutParams(dp(34),dp(1)).apply{leftMargin=dp(10)});l.addView(footerWrap,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(17)})
   scroll.addView(l);root.addView(scroll,FrameLayout.LayoutParams(-1,-1))
  }
  private fun load(){Thread{try{val r=req("/v1/workbooks","GET",null,token);val a=JSONArray(r.second);book=if(a.length()>0)from(a.getJSONObject(0))else Book(sheets=mutableListOf(Sheet(name="Planilha 1")));runOnUiThread{editor()}}catch(x:Exception){runOnUiThread{Toast.makeText(this,"Falha ao carregar",Toast.LENGTH_LONG).show();login()}}}.start()}

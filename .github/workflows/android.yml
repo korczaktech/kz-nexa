@@ -20,7 +20,7 @@ jobs:
           gradle-version: '8.10.2'
       - name: Show calculated Nexa version
         run: |
-          COMMITS_AFTER_RESET=$(git rev-list --count 0.0.0.652..HEAD)
+          COMMITS_AFTER_RESET=$(git rev-list --count 6b3c0a21d3ac28b34378d9b4452e966c67dd8f72..HEAD)
           VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
           if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
           echo "NEXA_VERSION=0.0.0.${VERSION_NUMBER}"

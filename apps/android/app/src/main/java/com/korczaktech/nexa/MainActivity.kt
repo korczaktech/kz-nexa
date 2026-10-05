@@ -122,23 +122,37 @@ class MainActivity:Activity(){
     if(!v.startsWith("=")){val n=v.replace(",",".").toDoubleOrNull();return if(n!=null&&s.cells.values.any{it.input==v&&it.numberFormat!="general"})n.toString()else v}
     return try{eval(v.substring(1),s,mutableSetOf())}catch(_:Exception){"#ERROR!"}
    }
-   private fun eval(e0:String,s:Sheet,seen:MutableSet<String>):String{
-    val e=e0.trim();if(e.startsWith("(")&&e.endsWith(")"))return eval(e.substring(1,e.length-1),s,seen)
-    val sr=Regex("^(?:'([^']+)'|([A-Za-z0-9_ ]+))!([A-Z]+[0-9]+)$").find(e)
-    if(sr!=null){val ts=book!!.sheets.firstOrNull{x->x.name==(sr.groupValues[1].ifBlank{sr.groupValues[2]})}?:return "0";val rk=sr.groupValues[3];if(!seen.add(ts.id+"!"+rk))return "#CIRC!";val rv=ts.cells[rk]?.input?:"";return if(rv.startsWith("="))eval(rv.substring(1),ts,seen)else rv}
-    val m=Regex("(?i)^(SUM|AVERAGE|MIN|MAX|COUNT)\\((.+)\\)$").find(e)
-    if(m!=null){val vs=m.groupValues[2].split(":").flatMap{x->vals(x,s,seen)}.mapNotNull{x->x.toDoubleOrNull()};return when(m.groupValues[1].uppercase()){"SUM"->vs.sum();"AVERAGE"->if(vs.isEmpty())0.0 else vs.average();"MIN"->vs.minOrNull()?:0.0;"MAX"->vs.maxOrNull()?:0.0;else->vs.size.toDouble()}.toString()}
-    if(e.contains("+"))return e.split("+").sumOf{x->eval(x,s,seen).toDouble()}.toString()
-    if(e.contains("*"))return e.split("*").fold(1.0){a,x->a*eval(x,s,seen).toDouble()}.toString()
-    if(e.contains("/"))return (eval(e.substringBefore("/"),s,seen).toDouble()/eval(e.substringAfter("/"),s,seen).toDouble()).toString()
-    e.replace(",",".").toDoubleOrNull()?.let{return it.toString()}
-    if(s.cells.containsKey(e)){if(!seen.add(e))return "#CIRC!";val v=s.cells[e]!!.input;return if(v.startsWith("="))eval(v.substring(1),s,seen)else v}
-    return "0"
-   }
-   private fun vals(x:String,s:Sheet,seen:MutableSet<String>):List<String>{
-    if(!x.contains(":"))return listOf(eval(x,s,seen));val q=x.split(":");val a=parse(q[0]);val b=parse(q[1]);val out=mutableListOf<String>()
-    for(r in minOf(a.first,b.first)..maxOf(a.first,b.first))for(k in minOf(a.second,b.second)..maxOf(a.second,b.second))out.add(eval(key(r,k),s,seen))
-    return out
+   private fun eval(e0:String,s:Sheet,seen:MutableSet<String>):String{try{return FormulaParser(e0,s,seen).parse()}catch(e:Exception){return if(e.message=="CIRCULAR")"#CIRC!" else "#ERROR!"}}
+   private inner class FormulaParser(private val src0:String,private val sheet:Sheet,private val seen:MutableSet<String>){
+    private val src=src0.trim();private var pos=0
+    private fun skip(){while(pos<src.length&&src[pos].isWhitespace())pos++}
+    private fun peek(ch:Char)=run{skip();pos<src.length&&src[pos]==ch}
+    private fun eat(ch:Char):Boolean{skip();if(pos<src.length&&src[pos]==ch){pos++;return true};return false}
+    fun parse():String{val v=expr();skip();if(pos!=src.length)throw Exception("syntax");return v.toString()}
+    private fun expr():Double{var v=term();while(true){if(eat('+'))v+=term()else if(eat('-'))v-=term()else return v}}
+    private fun term():Double{var v=power();while(true){if(eat('*'))v*=power()else if(eat('/')){val d=power();if(d==0.0)throw Exception("DIV0");v/=d}else return v}}
+    private fun power():Double{var v=unary();if(eat('^'))v=Math.pow(v,power());return v}
+    private fun unary():Double{if(eat('+'))return unary();if(eat('-'))return -unary();return primary()}
+    private fun primary():Double{
+     skip();if(eat('(')){val v=expr();if(!eat(')'))throw Exception("paren");return v}
+     val start=pos;while(pos<src.length&&!src[pos].isWhitespace()&&!"+-*/%^(),".contains(src[pos]))pos++
+     if(start==pos)throw Exception("token");val token=src.substring(start,pos)
+     if(token.replace(",",".").toDoubleOrNull()!=null)return token.replace(",",".").toDouble()
+     skip()
+     if(pos<src.length&&src[pos]=='('){
+      pos++;val args=mutableListOf<String>();var depth=0;var last=pos
+      while(pos<src.length){when(src[pos]){'('->{depth++};')'->{if(depth==0){if(pos>last)args.add(src.substring(last,pos));pos++;break}else depth--};','->{if(depth==0){args.add(src.substring(last,pos));last=pos+1}}};pos++}
+      val fn=token.uppercase();if(fn !in setOf("SUM","AVERAGE","MIN","MAX","COUNT"))throw Exception("function")
+      val vals=args.flatMap{argumentValues(it)};val nums=vals.mapNotNull{it.replace(",",".").toDoubleOrNull()}
+      return when(fn){"SUM"->nums.sum();"AVERAGE"->if(nums.isEmpty())0.0 else nums.average();"MIN"->nums.minOrNull()?:0.0;"MAX"->nums.maxOrNull()?:0.0;"COUNT"->vals.count{it.replace(",",".").toDoubleOrNull()!=null}.toDouble();else->0.0}
+     }
+     return resolve(token)
+    }
+    private fun argumentValues(arg:String):List<String>{val t=arg.trim();val range=t.split(":");if(range.size==2){val a=cellPoint(range[0]);val b=cellPoint(range[1]);val out=mutableListOf<String>();for(r in minOf(a.first,b.first)..maxOf(a.first,b.first))for(c in minOf(a.second,b.second)..maxOf(a.second,b.second))out.add(resolveRaw(sheet,key(r,c)));return out};return listOf(resolveRaw(sheet,t))}
+    private fun resolveRaw(s:Sheet,ref:String):String{val m=Regex("^(?:'((?:[^']|'')+)'|([A-Za-z0-9_ .-]+))!([A-Z]+[0-9]+)$").find(ref);if(m!=null){val name=(m.groupValues[1].ifBlank{m.groupValues[2]}).replace("''","'");val ts=book!!.sheets.firstOrNull{x->x.name==name}?:return "0";return resolveCell(ts,m.groupValues[3].uppercase())};return if(Regex("^[A-Z]+[1-9][0-9]*$",RegexOption.IGNORE_CASE).matches(ref))resolveCell(s,ref.uppercase()) else ref}
+    private fun resolve(ref:String):Double{val raw=resolveRaw(sheet,ref);return raw.replace(",",".").toDoubleOrNull()?:throw Exception("number")}
+    private fun resolveCell(s:Sheet,k:String):String{val id=s.id+"!"+k;if(!seen.add(id))throw Exception("CIRCULAR");val raw=s.cells[k]?.input?:"0";return if(raw.startsWith("="))eval(raw.substring(1),s,seen)else raw}
+    private fun cellPoint(k:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(k.trim())?:throw Exception("ref");var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
    }
   private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
   override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;if(e.action==MotionEvent.ACTION_DOWN){selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};if(e.action==MotionEvent.ACTION_MOVE){selEnd=locR(y);selColEnd=locC(x);invalidate();return true};if(e.action==MotionEvent.ACTION_UP){if(y>=head)edit(selStart,selColStart);return true};return true}

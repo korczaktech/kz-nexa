@@ -1,10 +1,10 @@
-const BASE = "/kz-nexa/";
+const BASE = new URL("./", self.registration.scope).pathname;
 const CACHE = "nexa-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll([BASE, BASE + "manifest.webmanifest", BASE + "icon.svg"]),
+      cache.addAll([BASE, BASE + "manifest.json", BASE + "icon.svg"]),
     ),
   );
   self.skipWaiting();
@@ -21,6 +21,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
   event.respondWith(
     caches.match(event.request).then(
       (cached) =>

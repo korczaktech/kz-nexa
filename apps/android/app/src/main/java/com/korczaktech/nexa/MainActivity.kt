@@ -68,14 +68,19 @@ class MainActivity:Activity(){
   return b
  }
  private class NexaWordmarkView(context:android.content.Context):View(context){
-  private val white=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=72f;color=Color.WHITE}
-  private val green=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=72f;color=Color.rgb(75,226,128)}
-  private val arrow=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.STROKE;strokeWidth=6f;strokeCap=Paint.Cap.ROUND;strokeJoin=Paint.Join.ROUND;color=Color.rgb(75,226,128)}
+  private val white=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=94f;color=Color.WHITE}
+  private val green=Paint(Paint.ANTI_ALIAS_FLAG).apply{typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);textSize=94f;color=Color.rgb(75,226,128)}
+  private val arrow=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.STROKE;strokeWidth=8f;strokeCap=Paint.Cap.SQUARE;strokeJoin=Paint.Join.MITER;color=Color.rgb(75,226,128)}
   override fun onDraw(c:Canvas){
    val ne="Ne";val xa="xa";val total=white.measureText(ne)+green.measureText(xa);val x=(width-total)/2f;val base=height/2f-(white.ascent()+white.descent())/2f
    c.drawText(ne,x,base,white);val xStart=x+white.measureText(ne);c.drawText(xa,xStart,base,green)
-   val xx=xStart+green.measureText("x")*0.12f;val xw=green.measureText("x")*0.78f
-   c.drawLine(xx,base+5f,xx+xw,base-25f,arrow);c.drawLine(xx+xw,base-25f,xx+xw-10f,base-24f,arrow);c.drawLine(xx+xw,base-25f,xx+xw+2f,base-15f,arrow)
+   val xGlyphStart=xStart+green.measureText("x")*0.08f
+   val xGlyphWidth=green.measureText("x")*0.84f
+   val startX=xGlyphStart+5f;val startY=base+30f
+   val endX=xGlyphStart+xGlyphWidth-2f;val endY=base-42f
+   c.drawLine(startX,startY,endX,endY,arrow)
+   c.drawLine(endX,endY,endX-18f,endY+4f,arrow)
+   c.drawLine(endX,endY,endX-3f,endY+18f,arrow)
   }
  }
  private class AuthBackgroundView(context:android.content.Context):View(context){
@@ -104,7 +109,7 @@ class MainActivity:Activity(){
   card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=dp(14).toFloat()
   val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
-  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(88)).apply{bottomMargin=dp(5)})
+  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(112)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER
   card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
   val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD

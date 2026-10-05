@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Nexa">
-<rect width="128" height="128" rx="28" fill="#000"/>
-<g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-<circle cx="64" cy="64" r="38"/><circle cx="64" cy="64" r="21"/>
-<path d="M64 17v17M64 94v17M17 64h17M94 64h17"/>
-<path d="M34 94L97 31 M87 34l10-3-3 10"/><path d="M44 44l40 40"/>
-</g><path d="M64 77l18-24 6 7 14-18-2 17 13-2-25 20-6-7-13 17z" fill="#13a96f"/>
+<rect width="128" height="128" rx="26" fill="#050B08"/>
+<path d="M32 24l48-10 16 54-48 11z" fill="#07130D" stroke="#3D584A" stroke-width="3"/>
+<path d="M26 32l48-10 16 54-48 11z" fill="#0A1911" stroke="#607C6C" stroke-width="3"/>
+<path d="M20 40l48-10 16 54-48 11z" fill="#050B08" stroke="#fff" stroke-width="4"/>
+<g stroke="#416052" stroke-width="2.2" stroke-linecap="round"><path d="M32 51l13-3"/><path d="M34 59l13-3"/><path d="M36 67l13-3"/><path d="M52 47l13-3"/><path d="M54 55l13-3"/><path d="M56 63l13-3"/></g>
+<path d="M39 88l11-31 11 23 15-41" fill="none" stroke="#0B3A23" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39 88l11-31 11 23 15-41" fill="none" stroke="#70FFAA" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#B8FFD0"><circle cx="39" cy="88" r="2.8"/><circle cx="50" cy="57" r="2.8"/><circle cx="61" cy="80" r="2.8"/><circle cx="76" cy="39" r="2.8"/></g>
+<path d="M77 31l12 2-3 12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

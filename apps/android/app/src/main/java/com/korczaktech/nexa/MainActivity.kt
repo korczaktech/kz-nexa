@@ -82,13 +82,13 @@ class MainActivity:Activity(){
   private val p=Paint(Paint.ANTI_ALIAS_FLAG)
   override fun onDraw(c:Canvas){
    val w=width.toFloat();val h=height.toFloat()
-   val g=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(Color.rgb(2,8,5),Color.rgb(4,25,15),Color.rgb(3,13,8),Color.rgb(1,6,4)),null,Shader.TileMode.CLAMP)
+   val g=android.graphics.LinearGradient(0f,0f,w,h,intArrayOf(Color.rgb(1,9,5),Color.rgb(2,48,25),Color.rgb(4,30,17),Color.rgb(0,12,6)),null,Shader.TileMode.CLAMP)
    p.shader=g;c.drawRect(0f,0f,w,h,p);p.shader=null
-   val glow=android.graphics.RadialGradient(w*0.78f,h*0.18f,w*0.55f,intArrayOf(Color.argb(100,54,225,126),Color.argb(20,30,150,78),Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
+   val glow=android.graphics.RadialGradient(w*0.78f,h*0.18f,w*0.55f,intArrayOf(Color.argb(150,54,225,126),Color.argb(20,30,150,78),Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
    p.shader=glow;c.drawCircle(w*0.78f,h*0.18f,w*0.55f,p);p.shader=null
-   val glow2=android.graphics.RadialGradient(w*0.12f,h*0.84f,w*0.5f,intArrayOf(Color.argb(65,45,190,105),Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
+   val glow2=android.graphics.RadialGradient(w*0.12f,h*0.84f,w*0.5f,intArrayOf(Color.argb(95,45,190,105),Color.TRANSPARENT),null,Shader.TileMode.CLAMP)
    p.shader=glow2;c.drawCircle(w*0.12f,h*0.84f,w*0.5f,p);p.shader=null
-   p.color=Color.argb(30,102,255,165);p.strokeWidth=1f
+   p.color=Color.argb(42,102,255,165);p.strokeWidth=1f
    val step=dpLocal(38);var x=0f;while(x<w){c.drawLine(x,0f,x,h,p);x+=step};var y=0f;while(y<h){c.drawLine(0f,y,w,y,p);y+=step}
    p.color=Color.argb(75,108,235,157);var dx=step*0.5f;while(dx<w){var dy=step*0.5f;while(dy<h){c.drawCircle(dx,dy,1.3f,p);dy+=step};dx+=step}
   }

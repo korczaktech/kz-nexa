@@ -8,7 +8,7 @@ private data class Sheet(val id:String=UUID.randomUUID().toString(),var name:Str
 private data class Book(var id:String?=null,var name:String="Nova planilha",var sheets:MutableList<Sheet>,var active:Int=0)
 class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME
- override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();checkForUpdate()}
+ override fun onCreate(b:Bundle?){super.onCreate(b);root=FrameLayout(this);setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},1200)}
  private fun checkForUpdate(){
   Thread{try{
    val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection
@@ -16,7 +16,7 @@ class MainActivity:Activity(){
    if(c.responseCode !in 200..299)return@Thread
    val j=JSONObject(c.inputStream.bufferedReader().use{it.readText()});val tag=j.optString("tag_name").removePrefix("v")
    val assets=j.optJSONArray("assets");var apk:String?=null
-   if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").lowercase().endsWith(".apk")){apk=a.optString("browser_download_url");break}}
+   if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
    if(apk.isNullOrBlank()||!isNewer(tag,APP_VERSION))return@Thread
    runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
   }catch(_:Exception){}}.start()

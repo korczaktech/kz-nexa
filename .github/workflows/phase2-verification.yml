@@ -1,0 +1,26 @@
+name: Nexa Phase 2 Verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  phase2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run build
+      - run: node apps/web/scripts/verify-phase2.mjs
+      - run: node apps/android/verify-phase2.mjs
+      - run: node apps/api/dist/verify-phase2.js
+      - run: npm test
+      - run: gradle -p apps/android :app:assembleDebug

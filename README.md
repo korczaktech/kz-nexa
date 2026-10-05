@@ -182,3 +182,5 @@ O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 **Database global:** Contas — **NUNCA APAGAR**  
 **Infraestrutura:** GitHub Pages + Render + MongoDB Atlas  
 **Plataformas:** Desktop App + Desktop Web + iOS PWA + Android PWA + Android Nativo
+
+<!-- CI verification -->

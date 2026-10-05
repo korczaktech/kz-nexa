@@ -29,7 +29,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXA_VERSION=$VERSION"
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -51,10 +51,24 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" || { echo "Keystore secret is missing"; exit 1; }
           test -n "$KEYSTORE_PASSWORD" || { echo "Keystore password secret is missing"; exit 1; }
-          test -n "$KEY_ALIAS" || { echo "Key alias secret is missing"; exit 1; }
           test -n "$KEY_PASSWORD" || { echo "Key password secret is missing"; exit 1; }
+
           printf "%s" "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/nexa-release.jks"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/nexa-release.jks" --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out apps/android/app/build/outputs/apk/debug/nexa-signed.apk apps/android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$RUNNER_TEMP/nexa-release.jks" || { echo "Decoded keystore is empty"; exit 1; }
+
+          PRIVATE_KEY_ALIAS=$(keytool -list -v -keystore "$RUNNER_TEMP/nexa-release.jks" -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | awk -F': ' '/^Alias name:/{a=$2} /^Entry type: PrivateKeyEntry/{print a; exit}')
+          test -n "$PRIVATE_KEY_ALIAS" || { echo "No PrivateKeyEntry found in keystore"; exit 1; }
+
+          if [ -z "$KEY_ALIAS" ]; then
+            KEY_ALIAS="$PRIVATE_KEY_ALIAS"
+          elif ! keytool -list -v -keystore "$RUNNER_TEMP/nexa-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2>/dev/null | grep -q '^Entry type: PrivateKeyEntry'; then
+            echo "Configured alias is not a private-key entry; using the keystore private-key alias."
+            KEY_ALIAS="$PRIVATE_KEY_ALIAS"
+          fi
+
+          echo "Using private-key alias: $KEY_ALIAS"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign             --ks "$RUNNER_TEMP/nexa-release.jks"             --ks-key-alias "$KEY_ALIAS"             --ks-pass "pass:$KEYSTORE_PASSWORD"             --key-pass "pass:$KEY_PASSWORD"             --out apps/android/app/build/outputs/apk/debug/nexa-signed.apk             apps/android/app/build/outputs/apk/debug/app-debug.apk
+
           mv apps/android/app/build/outputs/apk/debug/nexa-signed.apk apps/android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose apps/android/app/build/outputs/apk/debug/app-debug.apk
 

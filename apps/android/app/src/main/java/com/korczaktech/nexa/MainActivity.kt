@@ -19,12 +19,12 @@ class MainActivity:Activity(){
    val tag=bestTag;if(tag.isBlank())return@Thread
    val assets=releases.getJSONObject((0 until releases.length()).firstOrNull{releases.getJSONObject(it).optString("tag_name").removePrefix("v")==tag}?:return@Thread).optJSONArray("assets");var apk:String?=null
    if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
-   val legacyInstalled=APP_VERSION_CODE>=651
+   val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
    if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
    runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
   }catch(_:Exception){}}.start()
  }
- private fun isNewer(remote:String,current:String):Boolean{
+ private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}\n private fun isNewer(remote:String,current:String):Boolean{
   val a=remote.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();val b=current.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();while(a.size<4)a.add(0);while(b.size<4)b.add(0);
   for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i];return false
  }

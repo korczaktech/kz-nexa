@@ -25,7 +25,7 @@ class MainActivity:Activity(){
    if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
    val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
    if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
-   runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
+   runOnUiThread{val dialog=AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).create();dialog.setOnShowListener{dialog.window?.setDimAmount(0f)};dialog.show();dialog.window?.setDimAmount(0f)}
   }catch(_:Exception){}finally{updateCheckRunning=false}}.start()
  }
  private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}
@@ -68,11 +68,11 @@ class MainActivity:Activity(){
   return b
  }
  private class NexaWordmarkView(context:android.content.Context):View(context){
- private val paintWhite=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.WHITE}
- private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104)}
+ private val paintWhite=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply{style=Paint.Style.FILL;color=Color.WHITE;isDither=true}
+ private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104);isDither=true}
  private val p=Path()
  override fun onDraw(c:Canvas){
-  val scale=0.84f;val sx=width/600f*scale;val sy=height/180f*scale;c.save();c.translate(width*(1f-scale)/2f,height*(1f-scale)/2f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
+  val scale=0.66f;val sx=width/600f*scale;val sy=height/180f*scale;c.save();c.translate(width*(1f-scale)/2f,height*(1f-scale)/2f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
   p.reset();w0(p);c.drawPath(p,paintWhite)
   p.reset();w1(p);c.drawPath(p,paintWhite)
   p.reset();w2(p);c.drawPath(p,paintWhite)

@@ -25,7 +25,17 @@ class MainActivity:Activity(){
    if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
    val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
    if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
-   runOnUiThread{val dialog=AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).create();dialog.show();dialog.window?.setDimAmount(0f);dialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
+   runOnUiThread{
+ val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(24),dp(22),dp(24),dp(18));box.background=rounded(Color.rgb(5,20,12),Color.rgb(55,150,91),24f)
+ val icon=TextView(this);icon.text="↻";icon.gravity=Gravity.CENTER;icon.textSize=25f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(Color.rgb(108,255,148));icon.background=rounded(Color.rgb(10,42,24),Color.rgb(55,150,91),18f);box.addView(icon,LinearLayout.LayoutParams(dp(52),dp(52)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(14)})
+ val title=textView("Atualização disponível",20f,Color.WHITE);title.gravity=Gravity.CENTER;title.typeface=Typeface.DEFAULT_BOLD;box.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+ val msg=textView("O Nexa $tag está disponível.\nDeseja atualizar agora?",14f,Color.rgb(185,215,198));msg.gravity=Gravity.CENTER;box.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(20)})
+ val actions=LinearLayout(this);actions.gravity=Gravity.CENTER;actions.setPadding(0,dp(2),0,0)
+ val later=textView("Agora não",14f,Color.rgb(170,205,185));later.gravity=Gravity.CENTER;later.typeface=Typeface.DEFAULT_BOLD;later.background=rounded(Color.rgb(10,31,20),Color.rgb(49,91,66),15f);later.isClickable=true
+ val update=textView("Atualizar agora",14f,Color.rgb(2,18,10));update.gravity=Gravity.CENTER;update.typeface=Typeface.DEFAULT_BOLD;update.background=rounded(Color.rgb(73,220,128),Color.rgb(129,255,170),15f);update.isClickable=true
+ actions.addView(later,LinearLayout.LayoutParams(0,dp(48),1f).apply{rightMargin=dp(7)});actions.addView(update,LinearLayout.LayoutParams(0,dp(48),1f).apply{leftMargin=dp(7)});box.addView(actions)
+ val dialog=AlertDialog.Builder(this).setView(box).create();later.setOnClickListener{dialog.dismiss()};update.setOnClickListener{dialog.dismiss();downloadUpdate(apk!!,tag)};dialog.setOnShowListener{dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));dialog.window?.setDimAmount(0.22f)};dialog.show()
+}
   }catch(_:Exception){}finally{updateCheckRunning=false}}.start()
  }
  private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}

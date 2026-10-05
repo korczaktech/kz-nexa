@@ -24,7 +24,8 @@ class MainActivity:Activity(){
    runOnUiThread{AlertDialog.Builder(this).setTitle("Atualização disponível").setMessage("O Nexa $tag está disponível. Deseja atualizar agora?").setPositiveButton("Atualizar"){_,_->downloadUpdate(apk!!,tag)}.setNegativeButton("Agora não",null).show()}
   }catch(_:Exception){}}.start()
  }
- private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}\n private fun isNewer(remote:String,current:String):Boolean{
+ private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}
+  private fun isNewer(remote:String,current:String):Boolean{
   val a=remote.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();val b=current.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();while(a.size<4)a.add(0);while(b.size<4)b.add(0);
   for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i];return false
  }

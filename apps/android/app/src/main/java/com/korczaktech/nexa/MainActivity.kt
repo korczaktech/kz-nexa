@@ -46,43 +46,61 @@ class MainActivity:Activity(){
  private fun dp(v:Int)=((v*resources.displayMetrics.density)+0.5f).toInt()
  private fun textView(text:String,size:Float,color:Int=Color.WHITE):TextView{val v=TextView(this);v.text=text;v.textSize=size;v.setTextColor(color);return v}
  private fun rounded(fill:Int,stroke:Int=Color.TRANSPARENT,radius:Float=18f):android.graphics.drawable.GradientDrawable=android.graphics.drawable.GradientDrawable().apply{setColor(fill);if(stroke!=Color.TRANSPARENT)setStroke(dp(1),stroke);cornerRadius=dp(radius.toInt()).toFloat()}
- private fun inputField(hint:String,password:Boolean=false):EditText{val e=EditText(this);e.hint=hint;e.setTextColor(Color.WHITE);e.setHintTextColor(Color.rgb(130,160,143));e.textSize=15f;e.setSingleLine(true);e.setPadding(dp(18),0,dp(18),0);e.background=rounded(Color.rgb(12,30,20),Color.rgb(38,78,55),16f);if(password)e.inputType=129;return e}
- private fun actionButton(label:String,primary:Boolean=true):TextView{val b=textView(label,15f);b.gravity=Gravity.CENTER;b.typeface=Typeface.DEFAULT_BOLD;b.setPadding(dp(18),dp(14),dp(18),dp(14));b.background=rounded(if(primary)Color.rgb(48,170,101) else Color.rgb(16,38,25),if(primary)Color.TRANSPARENT else Color.rgb(53,91,68),16f);b.isClickable=true;return b}
+ private fun inputField(hint:String,password:Boolean=false):EditText{val e=EditText(this);e.hint=hint;e.setTextColor(Color.WHITE);e.setHintTextColor(Color.rgb(111,145,124));e.textSize=15f;e.setSingleLine(true);e.setPadding(dp(18),0,dp(18),0);e.background=rounded(Color.rgb(9,25,16),Color.rgb(39,91,61),15f);if(password)e.inputType=129;return e}
+ private fun actionButton(label:String):TextView{val b=textView(label,15f);b.gravity=Gravity.CENTER;b.typeface=Typeface.DEFAULT_BOLD;b.setTextColor(Color.rgb(3,18,10));b.setPadding(dp(18),dp(14),dp(18),dp(14));b.background=rounded(Color.rgb(82,218,132),Color.rgb(121,255,164),16f);b.isClickable=true;b.elevation=dp(5).toFloat();return b}
+ private fun brandView():View{
+  val f=FrameLayout(this);f.layoutParams=LinearLayout.LayoutParams(-1,dp(58)).apply{bottomMargin=dp(4)}
+  val ne=textView("Ne",29f,Color.WHITE);ne.typeface=Typeface.DEFAULT_BOLD
+  val xa=textView("xa",29f,Color.rgb(75,222,127));xa.typeface=Typeface.DEFAULT_BOLD
+  val xMark=textView("x",29f,Color.TRANSPARENT);xMark.typeface=Typeface.DEFAULT_BOLD
+  f.addView(ne,FrameLayout.LayoutParams(dp(48),dp(54)).apply{gravity=Gravity.CENTER_HORIZONTAL;leftMargin=-dp(18)})
+  f.addView(xa,FrameLayout.LayoutParams(dp(48),dp(54)).apply{gravity=Gravity.CENTER_HORIZONTAL;leftMargin=dp(22)})
+  val arrow=textView("↗",19f,Color.rgb(75,222,127));arrow.typeface=Typeface.DEFAULT_BOLD
+  f.addView(arrow,FrameLayout.LayoutParams(dp(28),dp(28)).apply{gravity=Gravity.CENTER_HORIZONTAL;leftMargin=dp(29);topMargin=dp(1)})
+  return f
+ }
+ private fun authBackground():android.graphics.drawable.Drawable{
+  return android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+   intArrayOf(Color.rgb(3,11,7),Color.rgb(7,29,17),Color.rgb(5,16,10),Color.rgb(2,8,5))).apply{cornerRadius=0f}
+ }
  private fun login(){showAuth("login")}
  private fun showAuth(mode:String){
   root.removeAllViews()
-  val scroll=ScrollView(this);scroll.setBackgroundColor(Color.rgb(4,12,8))
-  val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(dp(28),dp(42),dp(28),dp(34))
-  val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(26),dp(28),dp(26),dp(26));card.background=rounded(Color.rgb(7,20,13),Color.rgb(29,61,43),24f)
-  val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;card.addView(logo,LinearLayout.LayoutParams(dp(94),dp(94)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(12)})
-  val brand=textView("NEXA",28f);brand.typeface=Typeface.DEFAULT_BOLD;brand.gravity=Gravity.CENTER;card.addView(brand)
-  val sub=textView(if(mode=="login")"Acesso ao seu espaço de trabalho" else if(mode=="register")"Crie seu acesso ao Korczak Nexa" else "Recupere o acesso à sua conta",14f,Color.rgb(154,190,168));sub.gravity=Gravity.CENTER;card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(24)})
-  val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD;card.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
-  val email=inputField("Email");card.addView(email,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
+  val scroll=ScrollView(this);scroll.background=authBackground();scroll.isFillViewport=true
+  val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;l.gravity=Gravity.CENTER_HORIZONTAL;l.setPadding(dp(22),dp(34),dp(22),dp(30))
+  val glow=TextView(this);glow.text="";glow.background=rounded(Color.rgb(12,61,33),Color.TRANSPARENT,100f);l.addView(glow,LinearLayout.LayoutParams(dp(220),dp(220)).apply{gravity=Gravity.TOP or Gravity.CENTER_HORIZONTAL;bottomMargin=-dp(180)})
+  val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(24),dp(25),dp(24),dp(24));card.background=rounded(Color.rgb(7,21,13),Color.rgb(40,94,62),25f);card.elevation=dp(10).toFloat()
+  val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;card.addView(logo,LinearLayout.LayoutParams(dp(76),dp(76)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(8)})
+  card.addView(brandView())
+  val sub=textView(if(mode=="login")"Seu espaço. Seu trabalho. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13f,Color.rgb(139,181,153));sub.gravity=Gravity.CENTER
+  card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
+  val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD
+  card.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
+  val email=inputField("Email");card.addView(email,LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(10)})
   if(mode=="register"){
-   val name=inputField("Nome completo");card.addView(name,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
-   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
-   val confirm=inputField("Confirmar senha",true);card.addView(confirm,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(16)})
-   val msg=textView("",13f,Color.rgb(255,130,130));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
-   val go=actionButton("Criar minha conta");card.addView(go,LinearLayout.LayoutParams(-1,dp(52)))
-   go.setOnClickListener{if(name.text.toString().trim().isEmpty()||email.text.toString().trim().isEmpty()||pass.text.length<6){msg.text="Preencha os campos e use uma senha com pelo menos 6 caracteres.";return@setOnClickListener};if(pass.text.toString()!=confirm.text.toString()){msg.text="As senhas não coincidem.";return@setOnClickListener};msg.text="Cadastro preparado. A ativação da conta será concluída pelo serviço Nexa."}
+   val name=inputField("Nome completo");card.addView(name,LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(10)})
+   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(10)})
+   val confirm=inputField("Confirmar senha",true);card.addView(confirm,LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(15)})
+   val msg=textView("",13f,Color.rgb(255,120,120));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+   val go=actionButton("Criar minha conta");card.addView(go,LinearLayout.LayoutParams(-1,dp(54)))
+   go.setOnClickListener{if(name.text.toString().trim().isEmpty()||email.text.toString().trim().isEmpty()||pass.text.length<6){msg.text="Preencha os campos e use uma senha com pelo menos 6 caracteres.";return@setOnClickListener};if(pass.text.toString()!=confirm.text.toString()){msg.text="As senhas não coincidem.";return@setOnClickListener};msg.text="Cadastro preparado. A ativação será concluída pelo serviço Nexa."}
   }else if(mode=="recover"){
-   val msg=textView("Informe seu email para receber as instruções de recuperação.",13f,Color.rgb(154,190,168));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
-   val go=actionButton("Enviar instruções");card.addView(go,LinearLayout.LayoutParams(-1,dp(52)))
-   go.setOnClickListener{msg.text="Se o email estiver cadastrado, você receberá as instruções de recuperação."}
+   val msg=textView("Informe seu email para receber as instruções de recuperação.",13f,Color.rgb(139,181,153));card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
+   val go=actionButton("Enviar instruções");card.addView(go,LinearLayout.LayoutParams(-1,dp(54)))
+   go.setOnClickListener{msg.text="Se o email estiver cadastrado, você receberá as instruções."}
   }else{
-   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(10)})
-   val err=textView("",13f,Color.rgb(255,130,130));card.addView(err,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
-   val bt=actionButton("Entrar");card.addView(bt,LinearLayout.LayoutParams(-1,dp(52)))
+   val pass=inputField("Senha",true);card.addView(pass,LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(10)})
+   val err=textView("",13f,Color.rgb(255,120,120));card.addView(err,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+   val bt=actionButton("Entrar");card.addView(bt,LinearLayout.LayoutParams(-1,dp(54)))
    bt.setOnClickListener{bt.isEnabled=false;Thread{try{val r=req("/v1/auth/login","POST",JSONObject().put("email",email.text.toString()).put("password",pass.text.toString()).toString(),null);if(r.first !in 200..299)throw Exception(JSONObject(r.second).optString("message","Não foi possível entrar."));val j=JSONObject(r.second);token=j.getString("token");uid=j.getJSONObject("user").getString("id");getPreferences(0).edit().putString("token",token).putString("uid",uid).apply();runOnUiThread{load()}}catch(x:Exception){runOnUiThread{err.text=x.message?:"Falha ao entrar";bt.isEnabled=true}}}.start()}
   }
-  val links=LinearLayout(this);links.gravity=Gravity.CENTER;links.setPadding(0,dp(18),0,0)
-  fun link(label:String,next:String){val b=textView(label,14f,Color.rgb(102,222,145));b.setPadding(dp(7),dp(8),dp(7),dp(8));b.isClickable=true;b.setOnClickListener{showAuth(next)};links.addView(b)}
+  val links=LinearLayout(this);links.gravity=Gravity.CENTER;links.setPadding(0,dp(17),0,0)
+  fun link(label:String,next:String){val b=textView(label,14f,Color.rgb(88,225,139));b.setPadding(dp(8),dp(8),dp(8),dp(8));b.isClickable=true;b.setOnClickListener{showAuth(next)};links.addView(b)}
   if(mode!="login")link("Entrar","login")
   if(mode=="login"){link("Criar conta","register");link("Recuperar acesso","recover")}else if(mode!="recover"){link("Recuperar acesso","recover")}
   card.addView(links)
   l.addView(card,LinearLayout.LayoutParams(-1,-2).apply{gravity=Gravity.CENTER_HORIZONTAL})
-  val footer=textView("KORCZAK HUB  •  TECNOLOGIA BRASILEIRA",11f,Color.rgb(91,123,105));footer.gravity=Gravity.CENTER;l.addView(footer,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(22)})
+  val footer=textView("KORCZAK HUB",11f,Color.rgb(84,128,100));footer.gravity=Gravity.CENTER;l.addView(footer,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(22)})
   scroll.addView(l);root.addView(scroll)
  }
  private fun load(){Thread{try{val r=req("/v1/workbooks","GET",null,token);val a=JSONArray(r.second);book=if(a.length()>0)from(a.getJSONObject(0))else Book(sheets=mutableListOf(Sheet(name="Planilha 1")));runOnUiThread{editor()}}catch(x:Exception){runOnUiThread{Toast.makeText(this,"Falha ao carregar",Toast.LENGTH_LONG).show();login()}}}.start()}

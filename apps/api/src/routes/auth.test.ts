@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 const secret="test-secret";
-process.env.JWT_SECRET=secret;
+process.env.JWT_SECRET=secret;\nprocess.env.MONGODB_URI="mongodb://127.0.0.1:27017/test";
 
 function reply(){return {status:0,body:null,code(n:number){this.status=n;return this},send(v:any){this.body=v;return this}}}
 

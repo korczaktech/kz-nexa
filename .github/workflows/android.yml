@@ -24,5 +24,6 @@ jobs:
           VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
           if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
           echo "NEXA_VERSION=0.0.0.${VERSION_NUMBER}"
-      - run: gradle -p apps/android :app:assembleDebug
+      - name: Build Android debug APK
+        run: gradle --no-daemon --stacktrace -p apps/android :app:assembleDebug
       - run: node apps/android/verify-phase1.mjs

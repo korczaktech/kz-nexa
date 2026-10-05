@@ -127,7 +127,7 @@ export async function phase2Routes(app:FastifyInstance){
     const id=String((req.params as any).id);if(!await access(req,id,"editor"))return sendError(res,"FORBIDDEN",403);
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any;
     const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");const existing:any=await productDb().collection("workbooks").findOne({_id:wid});if(!existing)return sendError(res,"NOT_FOUND",404);
-    const incoming=b.workbook&&typeof b.workbook==="object"?b.workbook:null;let applied=false;if(incoming&&Array.isArray(incoming.sheets)){const clean={...incoming,ownerId:String(existing.ownerId),_id:existing._id,createdAt:existing.createdAt,updatedAt:now()};await productDb().collection("workbooks").replaceOne({_id:wid},clean);applied=true;}
+    const incoming=b.workbook&&typeof b.workbook==="object"?b.workbook:null;let applied=false;let clean:any=existing;if(incoming&&Array.isArray(incoming.sheets)){clean={...incoming,ownerId:String(existing.ownerId),_id:existing._id,createdAt:existing.createdAt,updatedAt:now()};await productDb().collection("workbooks").replaceOne({_id:wid},clean);applied=true;}
     const d={workbookId:id,ownerId:String(existing.ownerId),sourceDevice:String(b.sourceDevice||"unknown").slice(0,100),clientRevision:Number(b.clientRevision)||0,serverRevision:Number(b.clientRevision)||0,serverTime:now(),status:applied?"synced":"unchanged",workbook:applied?clean:existing};return res.send(d);
   });
 

@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-labelledby="title desc">
-<title>Nexa</title><desc>Wordmark Korczak Nexa com Ne branco, xa verde e seta diagonal integrada ao x.</desc>
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9affbf"/><stop offset="1" stop-color="#45df7e"/></linearGradient></defs>
-<text x="360" y="126" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="128" font-weight="800" letter-spacing="-7"><tspan fill="#fff">Ne</tspan><tspan fill="url(#g)">xa</tspan></text>
-<path d="M340 120 L391 67" fill="none" stroke="#75f0a3" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M391 67 L374 69 M391 67 L388 84" fill="none" stroke="#75f0a3" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 573 195" role="img" aria-labelledby="title desc">
+<title>Nexa</title>
+<desc>Logotipo Nexa extraído e vetorizado da arte fornecida, com seta diagonal integrada ao X.</desc>
+<g fill="#FFFFFF" fill-rule="evenodd"><path d="M 302,59 309,70 346,118 348,123 299,189 339,189 390,121 343,59 Z"/><path d="M 200,64 189,71 178,82 169,98 166,108 165,135 168,147 176,163 187,175 201,184 212,188 227,191 250,191 251,190 261,189 271,186 283,179 293,169 273,149 266,155 255,160 246,162 232,162 219,158 213,154 207,148 204,143 202,135 203,134 301,134 300,106 297,96 291,84 275,68 264,62 250,58 225,57 224,58 214,59 Z M 202,108 205,100 216,89 228,84 241,84 253,89 262,98 266,106 267,111 266,112 203,112 Z"/><path d="M 0,22 0,189 37,189 37,89 38,88 41,90 52,104 60,116 68,125 69,128 74,133 116,189 148,189 148,22 111,22 111,120 110,121 107,119 85,89 33,22 Z"/></g>
+<g fill="#20A968" fill-rule="evenodd"><path d="M 396,127 379,148 376,153 376,156 398,186 401,189 442,189 442,187 Z"/><path d="M 453,72 466,97 471,96 481,90 490,87 500,85 510,85 519,87 529,93 535,104 535,110 534,111 490,111 480,113 463,120 454,128 448,140 447,155 451,169 454,174 463,183 476,189 484,191 504,192 520,188 529,183 535,177 537,177 538,178 538,189 572,189 572,105 568,87 561,75 555,69 545,63 529,58 495,57 471,63 Z M 484,145 489,138 497,134 521,133 522,134 534,134 535,135 535,148 532,154 523,162 511,166 500,166 490,162 484,154 Z"/><path d="M 471,5 455,5 454,7 450,7 440,11 418,16 411,19 415,24 422,29 423,33 387,75 376,90 395,115 398,113 434,67 448,51 464,63 Z"/></g>
 </svg>

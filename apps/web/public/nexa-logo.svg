@@ -1,14 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 857 1536" role="img" aria-labelledby="title desc">
-<title>Korczak Nexa — Tecnologia Brasileira</title><desc>Logo do Korczak Nexa com símbolo de alvo e seta, palavra Nexa e assinatura Tecnologia Brasileira.</desc>
+<title>Korczak Nexa — Tecnologia Brasileira</title><desc>Logo do Korczak Nexa com símbolo de alvo, palavra Nexa e assinatura Tecnologia Brasileira.</desc>
 <rect width="857" height="1536" fill="#000"/>
 <g fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
 <circle cx="428.5" cy="645" r="200"/><circle cx="428.5" cy="645" r="112"/>
 <path d="M428.5 398v92 M428.5 800v92 M181 645h94 M582 645h94"/>
-<path d="M275 792L645 425 M580 438l65-13-13 65"/><path d="M325 541l205 205"/>
 <path d="M336 548a112 112 0 0 1 154 3 M508 742a112 112 0 0 1-150-2"/>
 </g>
-<g font-family="Arial, Helvetica, sans-serif" font-weight="800"><text x="139" y="1060" font-size="190" fill="#fff">Ne</text>
-<path d="M440 1025l96-126 31 38 73-95-12 94 70-8-132 105-30-39-65 87z" fill="#13a96f"/><text x="548" y="1060" font-size="190" fill="#13a96f">a</text></g>
+<text x="139" y="1060" font-family="Arial, Helvetica, sans-serif" font-size="190" font-weight="800" fill="#fff">Nexa</text>
 <text x="141" y="1120" font-family="Arial, Helvetica, sans-serif" font-size="47" fill="#fff" letter-spacing="1">TECNOLOGIA BRASILEIRA</text>
 <text x="428.5" y="1450" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#c9c9c9" letter-spacing="1">PARTE DO KORCZAK HUB</text>
 <text x="428.5" y="1490" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#fff">KZ TECH</text>

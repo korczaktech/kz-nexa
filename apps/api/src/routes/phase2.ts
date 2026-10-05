@@ -79,7 +79,7 @@ export async function phase2Routes(app:FastifyInstance){
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any,email=String(b.email||"").trim().toLowerCase(),permission=b.permission;
     if(!/^\S+@\S+\.\S+$/.test(email)||!["viewer","commenter","editor"].includes(permission))return sendError(res,"INVALID_SHARE");
     const d={workbookId:id,ownerId:req.user!.sub,email,permission,createdAt:now(),updatedAt:now()};
-    const r=await productDb().collection("shares").findOneAndUpdate({workbookId:id,email},{$set:d},{$setOnInsert:{createdAt:d.createdAt}},{upsert:true,returnDocument:"after"});
+    const r=await productDb().collection("shares").findOneAndUpdate({workbookId:id,email},{$set:d,$setOnInsert:{createdAt:d.createdAt}},{upsert:true,returnDocument:"after"});
     return res.send({...r,_id:String(r._id)});
   });
 
@@ -131,7 +131,7 @@ export async function phase2Routes(app:FastifyInstance){
     const filters=Array.isArray(b.filters)?b.filters:[];const header=rows.shift()||[],colIndex=(name:string)=>{const n=header.indexOf(name);return n>=0?n:Number(name)};
     let filtered=rows.filter((row:string[])=>filters.every((f:any)=>{const v=row[colIndex(String(f.column))]??"",x=String(f.value??"");switch(f.operator){case"eq":return v===x;case"neq":return v!==x;case"contains":return v.toLowerCase().includes(x.toLowerCase());case"gt":return Number(v.replace(",","."))>Number(x.replace(",","."));case"gte":return Number(v.replace(",","."))>=Number(x.replace(",","."));case"lt":return Number(v.replace(",","."))<Number(x.replace(",","."));case"lte":return Number(v.replace(",","."))<=Number(x.replace(",","."));default:return true}}));
     if(b.sort){const ci=colIndex(String(b.sort.column));filtered.sort((x,y)=>{const nx=Number(x[ci]?.replace(",",".")),ny=Number(y[ci]?.replace(",","."));const cmp=Number.isFinite(nx)&&Number.isFinite(ny)?nx-ny:String(x[ci]??"").localeCompare(String(y[ci]??""));return b.sort.direction==="desc"?-cmp:cmp})}
-    const limit=Math.max(1,Math.min(10000,Number(b.limit)||1000));return res.send({headers,rows:filtered.slice(0,limit),total:filtered.length});
+    const limit=Math.max(1,Math.min(10000,Number(b.limit)||1000));return res.send({headers:header,rows:filtered.slice(0,limit),total:filtered.length});
   });
 
   app.get("/v1/templates",{preHandler:requireAuth},async(_req,res)=>{

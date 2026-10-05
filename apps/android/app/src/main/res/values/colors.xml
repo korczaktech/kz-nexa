@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<color name="nexa_bg">#F5F7F4</color><color name="nexa_ink">#0F1A14</color><color name="nexa_muted">#5B6A62</color><color name="nexa_line">#E1E7E2</color><color name="nexa_green">#137A54</color><color name="nexa_green_deep">#0E4D36</color><color name="nexa_green_tint">#E3F2EA</color><color name="nexa_green_light">#BFE3D1</color><color name="nexa_mint">#A9DEC4</color><color name="nexa_mint_soft">#C9E8D8</color><color name="nexa_white">#FFFFFF</color>
+</resources>

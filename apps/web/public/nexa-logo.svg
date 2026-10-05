@@ -1,26 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 857 1536"><rect width="857" height="1536" fill="#000"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 857 1536">
+<rect width="857" height="1536" fill="#000"/>
 <g transform="translate(42 35) scale(.91)">
-<defs>
- <linearGradient id="g" x1="88" y1="420" x2="424" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#39D98A"/><stop offset=".55" stop-color="#69FF9A"/><stop offset="1" stop-color="#B8FFD0"/></linearGradient>
- <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-</defs>
-<!-- three-sheet stack: organization / documents -->
-<path d="M108 158 318 84c11-4 23 1 28 12l73 204c4 11-1 23-12 27l-210 74c-11 4-23-1-27-12L96 185c-4-11 1-23 12-27Z" fill="#0A1711" stroke="#5B7867" stroke-width="10"/>
-<path d="m84 190 208-74c11-4 23 1 27 12l72 203c4 11-1 23-12 27l-208 74c-11 4-23-1-27-12L72 218c-4-11 1-23 12-28Z" fill="#06100B" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round"/>
-<!-- structured rows -->
-<path d="m125 245 52-19m-42 49 52-19m-41 49 52-19" stroke="#6D8B79" stroke-width="9" stroke-linecap="round"/>
-<!-- Nexa N / ascending data path -->
-<path d="m177 354 49-128 47 92 68-151" fill="none" stroke="url(#g)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
-<path d="m177 354 49-128 47 92 68-151" fill="none" stroke="#69FF9A" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
-<g fill="#69FF9A">
- <circle cx="177" cy="354" r="13"/><circle cx="226" cy="226" r="13"/><circle cx="273" cy="318" r="13"/><circle cx="341" cy="167" r="13"/>
+<defs><linearGradient id="g" x1="105" y1="420" x2="410" y2="72" gradientUnits="userSpaceOnUse"><stop stop-color="#19B96B"/><stop offset=".48" stop-color="#52F59A"/><stop offset="1" stop-color="#C5FFDD"/></linearGradient><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<path d="M116 106 334 55l72 245-219 51z" fill="#07130D" stroke="#3D584A" stroke-width="10" stroke-linejoin="round"/>
+<path d="M91 139 309 88l72 245-219 51z" fill="#0A1911" stroke="#607C6C" stroke-width="10" stroke-linejoin="round"/>
+<path d="M68 174 286 123l72 245-219 51z" fill="#050B08" stroke="#FFF" stroke-width="13" stroke-linejoin="round"/>
+<g stroke="#416052" stroke-width="7" stroke-linecap="round"><path d="m113 213 61-14"/><path d="m123 246 61-14"/><path d="m133 279 61-14"/><path d="m206 193 55-13"/><path d="m216 226 55-13"/><path d="m226 259 55-13"/></g>
+<path d="M154 353 205 216l51 101 71-181" fill="none" stroke="#0B3A23" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M154 353 205 216l51 101 71-181" fill="none" stroke="url(#g)" stroke-width="23" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+<path d="M154 353 205 216l51 101 71-181" fill="none" stroke="#70FFAA" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#B8FFD0" stroke="#39D98A" stroke-width="5"><circle cx="154" cy="353" r="11"/><circle cx="205" cy="216" r="11"/><circle cx="256" cy="317" r="11"/><circle cx="327" cy="136" r="11"/></g>
+<path d="m332 92 48 8-12 48" fill="none" stroke="#FFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="m380 100-9 9" stroke="#70FFAA" stroke-width="8" stroke-linecap="round"/>
 </g>
-<!-- precision corner / forward motion -->
-<path d="m360 118 46 10-14 45" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="407" cy="127" r="5" fill="#69FF9A"/>
-</g>
-<text x="139" y="1060" font-family="Arial, Helvetica, sans-serif" font-size="190" font-weight="800" fill="#fff">Nexa</text>
-<text x="141" y="1120" font-family="Arial, Helvetica, sans-serif" font-size="47" fill="#fff" letter-spacing="1">TECNOLOGIA BRASILEIRA</text>
-<text x="428.5" y="1450" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#c9c9c9" letter-spacing="1">PARTE DO KORCZAK HUB</text>
-<text x="428.5" y="1490" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#fff">KZ TECH</text>
-</svg>
+<text x="139" y="1060" font-family="Arial,Helvetica,sans-serif" font-size="190" font-weight="800" fill="#fff">Nexa</text>
+<text x="141" y="1120" font-family="Arial,Helvetica,sans-serif" font-size="47" fill="#fff" letter-spacing="1">TECNOLOGIA BRASILEIRA</text>
+<text x="428.5" y="1450" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="27" fill="#c9c9c9" letter-spacing="1">PARTE DO KORCZAK HUB</text>
+<text x="428.5" y="1490" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="30" font-weight="800" fill="#fff">KZ TECH</text></svg>

@@ -115,37 +115,80 @@ class MainActivity:Activity(){
  override fun onCreate(b:Bundle?){super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11);root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);val splash=FrameLayout(this);splash.setBackgroundColor(Color.rgb(1,7,4));splash.addView(MatrixSplashView(this),FrameLayout.LayoutParams(-1,-1));val word=NexaWordmarkView(this);splash.addView(word,FrameLayout.LayoutParams(-1,dp(92),Gravity.CENTER).apply{topMargin=dp(330)});root.addView(splash,FrameLayout.LayoutParams(-1,-1));android.os.Handler(mainLooper).postDelayed({root.removeView(splash);appReady=true;token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},500)},1450)}
  override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized)android.os.Handler(mainLooper).postDelayed({checkForUpdate()},350)}
  private var updateCheckRunning=false
+ private var updateDialogShowing=false
  private fun checkForUpdate(){
-  if(updateCheckRunning)return
+  if(updateCheckRunning||updateDialogShowing)return
   updateCheckRunning=true
-  Thread{try{
-   val c=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=100").openConnection() as HttpURLConnection
-   c.requestMethod="GET";c.setRequestProperty("Accept","application/vnd.github+json");c.connectTimeout=8000;c.readTimeout=10000
-   if(c.responseCode !in 200..299)return@Thread
-   val releases=JSONArray(c.inputStream.bufferedReader().use{it.readText()});var bestTag="";var bestDate=""
-   for(i in 0 until releases.length()){val r=releases.getJSONObject(i);if(r.optBoolean("draft")||r.optBoolean("prerelease"))continue;val candidate=r.optString("tag_name").removePrefix("v");if(!Regex("^0\\.0\\.0\\.\\d+$").matches(candidate))continue;val date=r.optString("published_at");if(date>bestDate){bestDate=date;bestTag=candidate}}
-   val tag=bestTag;if(tag.isBlank())return@Thread
-   val assets=releases.getJSONObject((0 until releases.length()).firstOrNull{releases.getJSONObject(it).optString("tag_name").removePrefix("v")==tag}?:return@Thread).optJSONArray("assets");var apk:String?=null
-   if(assets!=null)for(i in 0 until assets.length()){val a=assets.getJSONObject(i);if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){apk=a.optString("browser_download_url");break}}
-   val legacyInstalled=legacyVersion(APP_VERSION) && APP_VERSION_CODE>=651
-   if(apk.isNullOrBlank()||(!isNewer(tag,APP_VERSION)&&!legacyInstalled))return@Thread
-   runOnUiThread{
- val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(24),dp(22),dp(24),dp(18));box.background=rounded(Color.rgb(5,20,12),Color.rgb(55,150,91),24f)
- val icon=TextView(this);icon.text="↻";icon.gravity=Gravity.CENTER;icon.textSize=25f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(Color.rgb(108,255,148));icon.background=rounded(Color.rgb(10,42,24),Color.rgb(55,150,91),18f);box.addView(icon,LinearLayout.LayoutParams(dp(52),dp(52)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(14)})
- val title=textView("Atualização disponível",20f,Color.WHITE);title.gravity=Gravity.CENTER;title.typeface=Typeface.DEFAULT_BOLD;box.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
- val msg=textView("O Nexa $tag está disponível.\nDeseja atualizar agora?",14f,Color.rgb(185,215,198));msg.gravity=Gravity.CENTER;box.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(20)})
- val actions=LinearLayout(this);actions.gravity=Gravity.CENTER;actions.setPadding(0,dp(2),0,0)
- val later=textView("Agora não",14f,Color.rgb(170,205,185));later.gravity=Gravity.CENTER;later.typeface=Typeface.DEFAULT_BOLD;later.background=rounded(Color.rgb(10,31,20),Color.rgb(49,91,66),15f);later.isClickable=true
- val update=textView("Atualizar agora",14f,Color.rgb(2,18,10));update.gravity=Gravity.CENTER;update.typeface=Typeface.DEFAULT_BOLD;update.background=rounded(Color.rgb(73,220,128),Color.rgb(129,255,170),15f);update.isClickable=true
- actions.addView(later,LinearLayout.LayoutParams(0,dp(48),1f).apply{rightMargin=dp(7)});actions.addView(update,LinearLayout.LayoutParams(0,dp(48),1f).apply{leftMargin=dp(7)});box.addView(actions)
- val dialog=AlertDialog.Builder(this).setView(box).create();later.setOnClickListener{dialog.dismiss()};update.setOnClickListener{dialog.dismiss();downloadUpdate(apk!!,tag)};dialog.setOnShowListener{dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));dialog.window?.setDimAmount(0.22f)};dialog.show()
-}
-  }catch(_:Exception){}finally{updateCheckRunning=false}}.start()
+  Thread{
+   try{
+    val conn=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection
+    conn.requestMethod="GET"
+    conn.setRequestProperty("Accept","application/vnd.github+json")
+    conn.setRequestProperty("User-Agent","Korczak-Nexa-Updater")
+    conn.connectTimeout=10000
+    conn.readTimeout=15000
+    val code=conn.responseCode
+    if(code !in 200..299) return@Thread
+    val release=JSONObject(conn.inputStream.bufferedReader().use{it.readText()})
+    val tag=release.optString("tag_name").removePrefix("v").trim()
+    if(!Regex("^0\\.0\\.0\\.\\d+$").matches(tag)) return@Thread
+    val assets=release.optJSONArray("assets")
+    var apk:String?=null
+    if(assets!=null){
+     for(i in 0 until assets.length()){
+      val a=assets.getJSONObject(i)
+      if(a.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",ignoreCase=true)){
+       apk=a.optString("browser_download_url")
+       break
+      }
+     }
+    }
+    if(apk.isNullOrBlank()||!isNewer(tag,APP_VERSION)) return@Thread
+    runOnUiThread{
+     if(isFinishing||isDestroyed||updateDialogShowing)return@runOnUiThread
+     updateDialogShowing=true
+     val box=LinearLayout(this)
+     box.orientation=LinearLayout.VERTICAL
+     box.setPadding(dp(24),dp(22),dp(24),dp(18))
+     box.background=rounded(Color.rgb(5,20,12),Color.rgb(55,150,91),24f)
+     val icon=TextView(this)
+     icon.text="↻";icon.gravity=Gravity.CENTER;icon.textSize=25f;icon.typeface=Typeface.DEFAULT_BOLD
+     icon.setTextColor(Color.rgb(108,255,148));icon.background=rounded(Color.rgb(10,42,24),Color.rgb(55,150,91),18f)
+     box.addView(icon,LinearLayout.LayoutParams(dp(52),dp(52)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(14)})
+     val title=textView("Atualização disponível",20f,Color.WHITE)
+     title.gravity=Gravity.CENTER;title.typeface=Typeface.DEFAULT_BOLD
+     box.addView(title,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+     val msg=textView("O Nexa $tag está disponível.\\nSua versão: $APP_VERSION\\nDeseja atualizar agora?",14f,Color.rgb(185,215,198))
+     msg.gravity=Gravity.CENTER
+     box.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(20)})
+     val actions=LinearLayout(this);actions.gravity=Gravity.CENTER;actions.setPadding(0,dp(2),0,0)
+     val later=textView("Agora não",14f,Color.rgb(170,205,185));later.gravity=Gravity.CENTER;later.typeface=Typeface.DEFAULT_BOLD
+     later.background=rounded(Color.rgb(10,31,20),Color.rgb(49,91,66),15f);later.isClickable=true
+     val update=textView("Atualizar agora",14f,Color.rgb(2,18,10));update.gravity=Gravity.CENTER;update.typeface=Typeface.DEFAULT_BOLD
+     update.background=rounded(Color.rgb(73,220,128),Color.rgb(129,255,170),15f);update.isClickable=true
+     actions.addView(later,LinearLayout.LayoutParams(0,dp(48),1f).apply{rightMargin=dp(7)})
+     actions.addView(update,LinearLayout.LayoutParams(0,dp(48),1f).apply{leftMargin=dp(7)})
+     box.addView(actions)
+     val dialog=AlertDialog.Builder(this).setView(box).setCancelable(false).create()
+     later.setOnClickListener{updateDialogShowing=false;dialog.dismiss()}
+     update.setOnClickListener{updateDialogShowing=false;dialog.dismiss();downloadUpdate(apk!!,tag)}
+     dialog.setOnDismissListener{updateDialogShowing=false}
+     dialog.setOnShowListener{dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));dialog.window?.setDimAmount(0.22f)}
+     dialog.show()
+    }
+   }catch(_:Exception){
+   }finally{
+    updateCheckRunning=false
+   }
+  }.start()
  }
  private fun legacyVersion(v:String):Boolean{val n=v.substringAfterLast(".").toIntOrNull()?:return false;return v.startsWith("0.0.0.")&&n>=651}
-  private fun isNewer(remote:String,current:String):Boolean{
-  val a=remote.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();val b=current.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList();while(a.size<4)a.add(0);while(b.size<4)b.add(0);
-  for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i];return false
+ private fun isNewer(remote:String,current:String):Boolean{
+  val a=remote.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList()
+  val b=current.split(".").map{it.filter{c->c.isDigit()}.toIntOrNull()?:0}.toMutableList()
+  while(a.size<4)a.add(0);while(b.size<4)b.add(0)
+  for(i in 0 until 4)if(a[i]!=b[i])return a[i]>b[i]
+  return false
  }
  private fun downloadUpdate(url:String,tag:String){
   showUpdateToast("Baixando Nexa $tag...",false)

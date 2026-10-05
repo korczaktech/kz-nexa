@@ -9,7 +9,7 @@ private data class Book(var id:String?=null,var name:String="Nova planilha",var 
 class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE
  override fun onCreate(b:Bundle?){super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11);root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},500)}
- override fun onResume(){super.onResume();if(::root.isInitialized)android.os.Handler(mainLooper).postDelayed({checkForUpdate()},350)}
+ override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(::root.isInitialized)android.os.Handler(mainLooper).postDelayed({checkForUpdate()},350)}
  private var updateCheckRunning=false
  private fun checkForUpdate(){
   if(updateCheckRunning)return

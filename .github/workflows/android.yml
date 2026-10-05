@@ -16,5 +16,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+      - name: Show calculated Nexa version
+        run: |
+          echo "NEXA_VERSION=0.0.0.$(git rev-list --count HEAD)"
       - run: gradle -p apps/android :app:assembleDebug
       - run: node apps/android/verify-phase1.mjs

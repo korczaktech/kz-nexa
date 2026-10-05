@@ -105,6 +105,8 @@ private class MatrixSplashView(context: android.content.Context) : View(context)
         arrow.lineTo(cx + dp(42), cy - dp(36))
         canvas.drawPath(arrow, paint)
         paint.style = Paint.Style.FILL
+    }
+
     private fun dp(value: Int): Int = ((value * resources.displayMetrics.density) + 0.5f).toInt()
 }
 class MainActivity:Activity(){

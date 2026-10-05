@@ -17,3 +17,4 @@ jobs:
         with:
           gradle-version: '8.10.2'
       - run: gradle -p apps/android :app:assembleDebug
+      - run: node apps/android/verify-phase1.mjs

@@ -6,5 +6,5 @@ assert.equal(evaluateFormula("=A1+B1*2",get,"Planilha 1").value,14);assert.equal
 const dependent:Record<string,string>={A1:"10",A2:"=A1*2",A3:"=A2+5"};const dg=(s:string|undefined,k:string)=>dependent[k];assert.equal(evaluateFormula("=A3",dg,"Planilha 1").value,25);assert.equal(evaluateFormula("=SUM(A1:A3)",dg,"Planilha 1").value,55);
 const cyc:Record<string,string>={A1:"=A2",A2:"=A1"};assert.equal(evaluateFormula("=A1",(s,k)=>cyc[k!],"Planilha 1").value,"#CIRC!");
 assert.equal(evaluateFormula("=COUNT(A1:A3)",(s,k)=>({A1:"1",A2:"texto",A3:"0"} as any)[k!],"Planilha 1").value,2);
-assert.equal(shiftFormulaReferences("=A1+B$2+$C3+$D$4",1,2),"=C2+D$2+$C4+$D$4");assert.equal(evaluateFormula("=A1+",get).value,"#ERROR!");
+assert.equal(shiftFormulaReferences("=A1+B$2+$C3+$D$4",1,2),"=C2+D$2+$C4+$D$4");assert.equal(evaluateFormula("=A1+",get).value,"#ERROR!");assert.equal(evaluateFormula("=SUM(A1,A2)-B1^2",get).value,26);assert.equal(evaluateFormula("=A1/(B1-2)",get).value,"#ERROR!");assert.equal(evaluateFormula("=A1+$B$1",get).value,12);assert.equal(shiftFormulaReferences("=$A$1+B2",3,4),"=$A$1+F5");assert.match(formatNumber(12.3456,"number",2),/12,35/);assert.match(formatNumber(.1234,"percent",1),/12,3/);
 console.log("Shared Phase 1 verification: OK");process.exit(0);

@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "node --test"
+    "test": "node scripts/verify-build.mjs"
   },
   "dependencies": {
     "@kz-nexa/shared": "file:../../packages/shared",

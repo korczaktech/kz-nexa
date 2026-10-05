@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="32" fill="#06100b"/><path d="M30 94V34h16l36 39V34h16v60H82L46 55v39z" fill="#50ffa9"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Nexa">
+<rect width="128" height="128" rx="28" fill="#000"/>
+<g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="64" cy="64" r="38"/><circle cx="64" cy="64" r="21"/>
+<path d="M64 17v17M64 94v17M17 64h17M94 64h17"/>
+<path d="M34 94L97 31 M87 34l10-3-3 10"/><path d="M44 44l40 40"/>
+</g><path d="M64 77l18-24 6 7 14-18-2 17 13-2-25 20-6-7-13 17z" fill="#13a96f"/>
+</svg>

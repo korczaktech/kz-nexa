@@ -9,9 +9,9 @@ android {
         applicationId = "com.korczaktech.nexa"
         minSdk = 26
         targetSdk = 35
-    buildFeatures {
-        buildConfig = true
-    }
+        buildFeatures {
+            buildConfig = true
+        }
         val commitsAfterReset = providers.exec {
             commandLine("git", "rev-list", "--count", "6b3c0a21d3ac28b34378d9b4452e966c67dd8f72..HEAD")
         }.standardOutput.asText.get().trim().toIntOrNull() ?: 0
@@ -30,8 +30,6 @@ android {
         jvmTarget = "17"
     }
 }
-
-
 dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 }

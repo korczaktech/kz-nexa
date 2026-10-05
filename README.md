@@ -186,3 +186,5 @@ O Nexa deve crescer sem precisar ser reescrito a cada nova funcionalidade.
 
 
 <!-- phase1-final-verification -->
+
+<!-- final-ci-check -->

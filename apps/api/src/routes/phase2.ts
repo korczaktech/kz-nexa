@@ -80,6 +80,7 @@ export async function phase2Routes(app:FastifyInstance){
     if(!/^\S+@\S+\.\S+$/.test(email)||!["viewer","commenter","editor"].includes(permission))return sendError(res,"INVALID_SHARE");
     const d={workbookId:id,ownerId:req.user!.sub,email,permission,createdAt:now(),updatedAt:now()};
     const r=await productDb().collection("shares").findOneAndUpdate({workbookId:id,email},{$set:d,$setOnInsert:{createdAt:d.createdAt}},{upsert:true,returnDocument:"after"});
+    if(!r)return sendError(res,"SHARE_FAILED",500);
     return res.send({...r,_id:String(r._id)});
   });
 

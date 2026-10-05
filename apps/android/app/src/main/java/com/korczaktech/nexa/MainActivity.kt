@@ -72,7 +72,7 @@ class MainActivity:Activity(){
  private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104)}
  private val p=Path()
  override fun onDraw(c:Canvas){
-  val sx=width/600f;val sy=height/180f;c.save();c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
+  val sx=width/600f*0.90f;val sy=height/180f*0.90f;c.save();c.translate(width*0.05f,height*0.05f);c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
   p.reset();w0(p);c.drawPath(p,paintWhite)
   p.reset();w1(p);c.drawPath(p,paintWhite)
   p.reset();w2(p);c.drawPath(p,paintWhite)

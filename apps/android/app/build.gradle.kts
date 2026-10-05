@@ -12,11 +12,12 @@ android {
     buildFeatures {
         buildConfig = true
     }
-        val commitCount = providers.exec {
-            commandLine("git", "rev-list", "--count", "HEAD")
-        }.standardOutput.asText.get().trim().toIntOrNull()?.coerceAtLeast(1) ?: 1
-        versionCode = commitCount
-        versionName = "0.0.0.$commitCount"
+        val commitsAfterReset = providers.exec {
+            commandLine("git", "rev-list", "--count", "0.0.0.652..HEAD")
+        }.standardOutput.asText.get().trim().toIntOrNull() ?: 0
+        val nexVersion = (commitsAfterReset - 2).coerceAtLeast(2)
+        versionCode = nexVersion
+        versionName = "0.0.0.$nexVersion"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

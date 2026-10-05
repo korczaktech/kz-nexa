@@ -22,7 +22,12 @@ jobs:
         id: version
         shell: bash
         run: |
-          # 0.0.0.652 was the bad historical counter-based release.\n          # From this point the sequence is reset to 0.0.0.2 and increments once per commit.\n          COMMITS_AFTER_RESET=$(git rev-list --count 0.0.0.652..HEAD)\n          VERSION="0.0.0.$((COMMITS_AFTER_RESET + 1))"
+          # Reset the public Nexa sequence after the bad counter-based releases.
+          # The first post-reset commit is 0.0.0.2; every later commit increments by one.
+          COMMITS_AFTER_RESET=$(git rev-list --count 0.0.0.652..HEAD)
+          VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
+          if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
+          VERSION="0.0.0.${VERSION_NUMBER}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXA_VERSION=$VERSION"
 

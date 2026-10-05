@@ -90,10 +90,10 @@ export async function phase2Routes(app:FastifyInstance){
   app.post("/v1/workbooks/:id/versions",{preHandler:requireAuth},async(req,res)=>{
     const id=String((req.params as any).id);if(!await access(req,id,"editor"))return sendError(res,"FORBIDDEN",403);
     const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");
-    const workbook=await productDb().collection("workbooks").findOne({_id:wid,ownerId:req.user!.sub});if(!workbook)return sendError(res,"NOT_FOUND",404);
+    const workbook=await productDb().collection("workbooks").findOne({_id:wid});if(!workbook)return sendError(res,"NOT_FOUND",404);
     const latest=await productDb().collection("versions").find({workbookId:id}).sort({version:-1}).limit(1).next();
     const b=(req.body&&typeof req.body==="object"?req.body:{}) as any;
-    const d={workbookId:id,ownerId:req.user!.sub,version:Number(latest?.version||0)+1,label:String(b.label||"Versão"),source:["manual","autosave","sync"].includes(b.source)?b.source:"manual",snapshot:workbook,createdAt:now()};
+    const d={workbookId:id,ownerId:String(workbook.ownerId),version:Number(latest?.version||0)+1,label:String(b.label||"Versão"),source:["manual","autosave","sync"].includes(b.source)?b.source:"manual",snapshot:workbook,createdAt:now()};
     const r=await productDb().collection("versions").insertOne(d);return res.code(201).send({...d,_id:String(r.insertedId)});
   });
 
@@ -103,7 +103,7 @@ export async function phase2Routes(app:FastifyInstance){
     const wid=oid(id);if(!wid)return sendError(res,"INVALID_ID");
     const snap=v.snapshot as any;if(!snap||!Array.isArray(snap.sheets))return sendError(res,"INVALID_VERSION");
     const d={...snap,updatedAt:now(),ownerId:req.user!.sub};delete d._id;
-    const r=await productDb().collection("workbooks").findOneAndUpdate({_id:wid,ownerId:req.user!.sub},{$set:d},{returnDocument:"after"});
+    const r=await productDb().collection("workbooks").findOneAndUpdate({_id:wid},{$set:d},{returnDocument:"after"});
     return r?res.send({...r,_id:id}):sendError(res,"NOT_FOUND",404);
   });
 

@@ -1,9 +1,10 @@
-name: Nexa First APK Release
+name: Nexa APK Release
 
 on:
   push:
     branches:
-      - "release/0.0.0.1"
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,25 +15,46 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        shell: bash
+        run: |
+          VERSION="0.0.0.$(git rev-list --count HEAD)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEXA_VERSION=$VERSION"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
+
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.10.2'
+          gradle-version: "8.10.2"
+
       - name: Build APK
         run: gradle -p apps/android :app:assembleDebug
+
       - name: Verify APK
         run: test -f apps/android/app/build/outputs/apk/debug/app-debug.apk
+
       - name: Rename APK
-        run: cp apps/android/app/build/outputs/apk/debug/app-debug.apk "Korczak-HUB-Nexa-0.0.0.1.apk"
+        run: cp apps/android/app/build/outputs/apk/debug/app-debug.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"
+
       - name: Create GitHub Release with APK
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create 0.0.0.1 \
-            "Korczak-HUB-Nexa-0.0.0.1.apk" \
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists; skipping."
+            exit 0
+          fi
+          gh release create "$VERSION" \
+            "Korczak-HUB-Nexa-${VERSION}.apk" \
             --target "${GITHUB_SHA}" \
-            --title "Korczak Nexa 0.0.0.1" \
-            --notes "Primeira versão do Korczak Nexa. APK Android incluído."
+            --title "Korczak Nexa ${VERSION}" \
+            --notes "Versão ${VERSION} do Korczak Nexa. APK Android incluído."

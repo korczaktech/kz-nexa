@@ -67,7 +67,42 @@ class MainActivity:Activity(){
   b.background=android.graphics.drawable.StateListDrawable().apply{addState(intArrayOf(android.R.attr.state_enabled,android.R.attr.state_pressed),pressed);addState(intArrayOf(-android.R.attr.state_enabled),disabled);addState(intArrayOf(),normal)}
   return b
  }
- private private class AuthBackgroundView(context:android.content.Context):View(context){
+ private class NexaWordmarkView(context:android.content.Context):View(context){
+ private val paintWhite=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.WHITE}
+ private val paintGreen=Paint(Paint.ANTI_ALIAS_FLAG).apply{style=Paint.Style.FILL;color=Color.rgb(32,169,104)}
+ private val p=Path()
+ override fun onDraw(c:Canvas){
+  val sx=width/600f;val sy=height/180f;c.save();c.scale(sx,sy);p.fillType=Path.FillType.EVEN_ODD
+  p.reset();w0(p);c.drawPath(p,paintWhite)
+  p.reset();w1(p);c.drawPath(p,paintWhite)
+  p.reset();w2(p);c.drawPath(p,paintWhite)
+  p.reset();g0(p);c.drawPath(p,paintGreen)
+  p.reset();g1(p);c.drawPath(p,paintGreen)
+  p.reset();g2(p);c.drawPath(p,paintGreen)
+  c.restore()
+ }
+ private fun w0(p:Path){
+p.moveTo(8f,1f);p.lineTo(8f,29f);p.lineTo(7f,30f);p.lineTo(7f,45f);p.lineTo(8f,46f);p.lineTo(7f,50f);p.lineTo(7f,69f);p.lineTo(8f,70f);p.lineTo(8f,117f);p.lineTo(7f,118f);p.lineTo(8f,168f);p.lineTo(43f,168f);p.lineTo(43f,67f);p.lineTo(44f,66f);p.lineTo(46f,66f);p.lineTo(84f,117f);p.lineTo(102f,139f);p.lineTo(106f,146f);p.lineTo(124f,168f);p.lineTo(154f,168f);p.lineTo(155f,165f);p.lineTo(155f,158f);p.lineTo(154f,157f);p.lineTo(154f,3f);p.lineTo(155f,2f);p.lineTo(154f,1f);p.lineTo(119f,1f);p.lineTo(119f,100f);p.lineTo(117f,102f);p.lineTo(40f,1f);p.close()
+ }
+ private fun w1(p:Path){
+p.moveTo(215f,40f);p.lineTo(201f,47f);p.lineTo(190f,56f);p.lineTo(182f,66f);p.lineTo(175f,81f);p.lineTo(172f,96f);p.lineTo(172f,111f);p.lineTo(175f,125f);p.lineTo(181f,138f);p.lineTo(185f,144f);p.lineTo(200f,158f);p.lineTo(211f,164f);p.lineTo(224f,168f);p.lineTo(238f,169f);p.lineTo(239f,170f);p.lineTo(252f,170f);p.lineTo(253f,169f);p.lineTo(267f,168f);p.lineTo(283f,162f);p.lineTo(292f,156f);p.lineTo(299f,149f);p.lineTo(299f,147f);p.lineTo(281f,129f);p.lineTo(278f,130f);p.lineTo(274f,134f);p.lineTo(257f,141f);p.lineTo(250f,141f);p.lineTo(249f,142f);p.lineTo(236f,141f);p.lineTo(222f,135f);p.lineTo(217f,131f);p.lineTo(213f,126f);p.lineTo(208f,114f);p.lineTo(209f,113f);p.lineTo(308f,113f);p.lineTo(307f,86f);p.lineTo(303f,74f);p.lineTo(298f,64f);p.lineTo(292f,56f);p.lineTo(283f,48f);p.lineTo(264f,39f);p.lineTo(255f,37f);p.lineTo(237f,36f);p.lineTo(236f,37f);p.lineTo(228f,37f);p.close()
+p.moveTo(208f,89f);p.lineTo(210f,83f);p.lineTo(216f,73f);p.lineTo(224f,67f);p.lineTo(233f,63f);p.lineTo(249f,63f);p.lineTo(259f,67f);p.lineTo(268f,75f);p.lineTo(274f,87f);p.lineTo(273f,92f);p.lineTo(210f,92f);p.close()
+ }
+ private fun w2(p:Path){
+p.moveTo(309f,39f);p.lineTo(355f,99f);p.lineTo(356f,102f);p.lineTo(306f,168f);p.lineTo(346f,168f);p.lineTo(376f,128f);p.lineTo(380f,121f);p.lineTo(383f,119f);p.lineTo(387f,112f);p.lineTo(394f,104f);p.lineTo(396f,99f);p.lineTo(350f,39f);p.close()
+ }
+ private fun g0(p:Path){
+p.moveTo(462f,50f);p.lineTo(461f,54f);p.lineTo(474f,76f);p.lineTo(487f,69f);p.lineTo(499f,65f);p.lineTo(520f,64f);p.lineTo(527f,66f);p.lineTo(534f,70f);p.lineTo(540f,77f);p.lineTo(543f,88f);p.lineTo(541f,90f);p.lineTo(500f,90f);p.lineTo(499f,91f);p.lineTo(493f,91f);p.lineTo(472f,98f);p.lineTo(463f,105f);p.lineTo(456f,117f);p.lineTo(454f,131f);p.lineTo(457f,145f);p.lineTo(460f,151f);p.lineTo(465f,157f);p.lineTo(476f,165f);p.lineTo(484f,168f);p.lineTo(493f,170f);p.lineTo(515f,170f);p.lineTo(533f,164f);p.lineTo(544f,154f);p.lineTo(546f,157f);p.lineTo(546f,168f);p.lineTo(578f,168f);p.lineTo(579f,167f);p.lineTo(579f,87f);p.lineTo(575f,67f);p.lineTo(571f,59f);p.lineTo(564f,50f);p.lineTo(549f,41f);p.lineTo(539f,38f);p.lineTo(527f,37f);p.lineTo(526f,36f);p.lineTo(506f,36f);p.lineTo(505f,37f);p.lineTo(493f,38f);p.lineTo(476f,43f);p.close()
+p.moveTo(490f,130f);p.lineTo(492f,121f);p.lineTo(497f,116f);p.lineTo(507f,112f);p.lineTo(541f,112f);p.lineTo(543f,114f);p.lineTo(543f,123f);p.lineTo(540f,132f);p.lineTo(535f,138f);p.lineTo(524f,144f);p.lineTo(520f,145f);p.lineTo(502f,144f);p.lineTo(498f,142f);p.lineTo(492f,136f);p.close()
+ }
+ private fun g1(p:Path){
+p.moveTo(475f,0f);p.lineTo(419f,0f);p.lineTo(426f,5f);p.lineTo(431f,11f);p.lineTo(406f,40f);p.lineTo(384f,68f);p.lineTo(384f,70f);p.lineTo(402f,94f);p.lineTo(454f,30f);p.lineTo(458f,31f);p.lineTo(471f,41f);p.close()
+ }
+ private fun g2(p:Path){
+p.moveTo(403f,106f);p.lineTo(383f,132f);p.lineTo(383f,134f);p.lineTo(408f,168f);p.lineTo(449f,168f);p.close()
+ }
+}
+private class AuthBackgroundView(context:android.content.Context):View(context){
   private val p=Paint(Paint.ANTI_ALIAS_FLAG)
   override fun onDraw(c:Canvas){
    val w=width.toFloat();val h=height.toFloat()
@@ -93,7 +128,7 @@ class MainActivity:Activity(){
   card.background=rounded(Color.rgb(6,20,13),Color.rgb(52,119,79),28f);card.elevation=dp(14).toFloat()
   val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_target);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE
   card.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)).apply{gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(6)})
-  val word=ImageView(this);word.setImageResource(R.drawable.nexa_wordmark);word.scaleType=ImageView.ScaleType.CENTER_INSIDE;card.addView(word,LinearLayout.LayoutParams(-1,dp(118)).apply{bottomMargin=dp(5)})
+  val word=NexaWordmarkView(this);card.addView(word,LinearLayout.LayoutParams(-1,dp(118)).apply{bottomMargin=dp(5)})
   val sub=textView(if(mode=="login")"Suas Planilhas. Sua organização. Seu Nexa." else if(mode=="register")"Crie seu acesso ao Nexa." else "Recupere o acesso ao seu Nexa.",13.5f,Color.rgb(145,190,161));sub.gravity=Gravity.CENTER
   card.addView(sub,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(25)})
   val title=textView(if(mode=="login")"Entrar" else if(mode=="register")"Criar conta" else "Recuperar acesso",22f);title.typeface=Typeface.DEFAULT_BOLD

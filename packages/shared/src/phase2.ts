@@ -1,0 +1,13 @@
+export type ChartType="bar"|"line"|"pie"|"area"|"scatter";
+export type ChartConfig={id:string;workbookId:string;sheetId:string;title:string;type:ChartType;range:string;position:{x:number;y:number;width:number;height:number};createdAt:string;updatedAt:string};
+export type TableConfig={id:string;workbookId:string;sheetId:string;name:string;range:string;headerRow:boolean;filters:Record<string,string>;sort?:{column:string;direction:"asc"|"desc"};createdAt:string;updatedAt:string};
+export type PivotConfig={id:string;workbookId:string;sheetId:string;name:string;sourceRange:string;rowField:string;columnField?:string;valueField:string;aggregation:"sum"|"count"|"average"|"min"|"max";createdAt:string;updatedAt:string};
+export type DashboardConfig={id:string;workbookId:string;name:string;charts:string[];tables:string[];refreshMs:number;createdAt:string;updatedAt:string};
+export type Comment={id:string;workbookId:string;sheetId:string;cell:string;authorId:string;authorEmail:string;body:string;resolved:boolean;createdAt:string;updatedAt:string};
+export type SharePermission="viewer"|"commenter"|"editor";
+export type WorkbookShare={id:string;workbookId:string;ownerId:string;email:string;permission:SharePermission;createdAt:string;updatedAt:string};
+export type WorkbookVersion={id:string;workbookId:string;ownerId:string;version:number;label:string;createdAt:string;source:"manual"|"autosave"|"sync";snapshot:unknown};
+export type Template={id:string;name:string;description:string;category:string;workbook:unknown};
+export type AnalysisFilter={column:string;operator:"eq"|"neq"|"contains"|"gt"|"gte"|"lt"|"lte";value:string};
+export type AnalysisRequest={sheetId:string;range:string;filters?:AnalysisFilter[];sort?:{column:string;direction:"asc"|"desc"};limit?:number};
+export type AnalysisResult={headers:string[];rows:string[][];total:number};

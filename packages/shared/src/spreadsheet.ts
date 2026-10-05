@@ -1,0 +1,14 @@
+export type NumberFormat = "general"|"number"|"currency"|"percent";
+export type HorizontalAlign = "left"|"center"|"right";
+export interface CellStyle { bold?:boolean; italic?:boolean; underline?:boolean; strike?:boolean; align?:HorizontalAlign; numberFormat?:NumberFormat }
+export interface Cell { input:string; style?:CellStyle }
+export interface Sheet { id:string; name:string; cells:Record<string,Cell>; columnWidths:Record<string,number>; rowHeights:Record<string,number>; frozenRows:number; frozenColumns:number }
+export interface Workbook { _id?:string; ownerId:string; name:string; schemaVersion:number; sheets:Sheet[]; activeSheetId:string; createdAt:string; updatedAt:string }
+export function columnName(index:number):string { let n=index+1,s=""; while(n){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)} return s }
+export function columnIndex(name:string):number { let n=0; for(const c of name.toUpperCase()){if(c<"A"||c>"Z")throw new Error("Coluna inválida");n=n*26+c.charCodeAt(0)-64} return n-1 }
+export function cellKey(row:number,col:number):string { return columnName(col)+(row+1) }
+export function parseCellKey(key:string):{row:number;col:number}{const m=/^([A-Z]+)([1-9][0-9]*)$/i.exec(key.trim());if(!m)throw new Error("Célula inválida");return{col:columnIndex(m[1]),row:Number(m[2])-1}}
+export function expandRange(a:string,b:string):string[]{const p=parseCellKey(a),q=parseCellKey(b),out:string[]=[];for(let r=Math.min(p.row,q.row);r<=Math.max(p.row,q.row);r++)for(let c=Math.min(p.col,q.col);c<=Math.max(p.col,q.col);c++)out.push(cellKey(r,c));return out}
+export function formatNumber(value:unknown,format:NumberFormat="general"):string{if(typeof value!=="number"||!Number.isFinite(value))return String(value??"");if(format==="currency")return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(value);if(format==="percent")return new Intl.NumberFormat("pt-BR",{style:"percent",maximumFractionDigits:2}).format(value);if(format==="number")return new Intl.NumberFormat("pt-BR",{maximumFractionDigits:10}).format(value);return String(value)}
+export function csvEscape(value:string):string{return /[",\n\r]/.test(value)?'"'+value.replaceAll('"','""')+'"':value}
+export function parseCsv(text:string):string[][]{const rows:string[][]=[];let row:string[]=[],field="",quoted=false;for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch==='"'){if(text[i+1]==='"'){field+='"';i++}else quoted=false}else field+=ch}else if(ch==='"'&&field===""){quoted=true}else if(ch===","){row.push(field);field=""}else if(ch==="\n"){row.push(field);rows.push(row);row=[];field=""}else if(ch==="\r"){if(text[i+1]==="\n")i++;row.push(field);rows.push(row);row=[];field=""}else field+=ch}if(field!==""||row.length)row.push(field);if(row.length)rows.push(row);return rows}

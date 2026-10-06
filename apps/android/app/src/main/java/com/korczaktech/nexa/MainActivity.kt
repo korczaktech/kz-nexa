@@ -10,7 +10,7 @@ private data class Book(var id:String?=null,var name:String="Nova planilha",var 
 class MainActivity:Activity(){
  private var token:String?=null;private var uid="";private var profileName="Meu perfil";private var book:Book?=null;private val PICK=91;private val SAVE=92;private lateinit var root:FrameLayout;private lateinit var grid:Grid;private val APP_VERSION=BuildConfig.VERSION_NAME;private val APP_VERSION_CODE=BuildConfig.VERSION_CODE
  private var appReady=false
- override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11);root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);appReady=true;token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";profileName=getPreferences(0).getString("profileName","Meu perfil")?:"Meu perfil";showMatrixSplash{if(token==null)login()else load()};android.os.Handler(mainLooper).postDelayed({checkForUpdate()},500)}
+ override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11);root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);appReady=true;token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";profileName=getPreferences(0).getString("profileName","Meu perfil")?:"Meu perfil";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},5000)}
  override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized){android.os.Handler(mainLooper).postDelayed({finishPendingInstallIfPossible()},250);android.os.Handler(mainLooper).postDelayed({checkForUpdate()},550)}}
  private fun finishPendingInstallIfPossible(){val uri=pendingInstallUri?:return;if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls())return;pendingInstallUri=null;launchApkInstaller(uri)}
  private var updateCheckRunning=false
@@ -298,7 +298,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
  }
  private fun load(){Thread{try{val r=req("/v1/workbooks","GET",null,token);val a=JSONArray(r.second);book=if(a.length()>0)from(a.getJSONObject(0))else Book(sheets=mutableListOf(Sheet(name="Planilha 1")));runOnUiThread{home()}}catch(x:Exception){runOnUiThread{Toast.makeText(this,"Falha ao carregar",Toast.LENGTH_LONG).show();login()}}}.start()}
  private fun loadHomeAfterLogin(){load()}
- private fun showMatrixSplash(done:()->Unit){root.removeAllViews();val splash=MatrixSplashView(this);root.addView(splash,FrameLayout.LayoutParams(-1,-1));Handler(mainLooper).postDelayed({splash.stop();done()},1200)}
+ private fun showMatrixSplash(done:()->Unit){runOnUiThread{try{done()}catch(_:Throwable){login()}}}
  private inner class MatrixSplashView(context:Context):View(context){
   private val paint=Paint(Paint.ANTI_ALIAS_FLAG);private val chars="01NEXA";private val random=java.util.Random();private val columns=mutableListOf<Float>();private var running=true;private val ticker=object:Runnable{override fun run(){if(!running)return;invalidate();postDelayed(this,55)}}
   init{setBackgroundColor(Color.rgb(1,9,5));post(ticker)}

@@ -140,7 +140,7 @@ class MainActivity:Activity(){
         if(uri==null){showUpdateToast("Não foi possível abrir a atualização.",true);return}
         if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
          pendingInstallUri=uri
-         runOnUiThread{AlertDialog.Builder(this).setTitle("Permitir atualização do Nexa").setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.").setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}.setNegativeButton("Agora não",null).show()}
+         runOnUiThread{AlertDialog.Builder(this@MainActivity).setTitle("Permitir atualização do Nexa").setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.").setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}.setNegativeButton("Agora não",null).show()}
         }else launchApkInstaller(uri)
        }
        android.app.DownloadManager.STATUS_FAILED->showUpdateToast("Falha ao baixar a atualização ($reason). Tente novamente.",true)

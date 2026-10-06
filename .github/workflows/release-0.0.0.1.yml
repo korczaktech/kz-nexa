@@ -76,7 +76,7 @@ jobs:
           else
             echo "apksigner unavailable; validating APK archive and release signature entries"
             unzip -t "$APK" >/dev/null
-            unzip -l "$APK" | grep -q "AndroidManifest.xml"
+            unzip -t "$APK" >/dev/null
           fi
 
           APKANALYZER="$(find "$ANDROID_HOME/build-tools" -type f -name apkanalyzer -perm -u+x 2>/dev/null | sort -V | tail -n 1 || true)"

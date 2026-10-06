@@ -66,10 +66,15 @@ jobs:
           set -euo pipefail
           APK="apps/android/app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apkanalyzer" manifest application-id "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apkanalyzer" manifest min-sdk "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apkanalyzer" manifest target-sdk "$APK"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -n "$BUILD_TOOLS"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/apkanalyzer"
+          echo "Using Android build-tools: $BUILD_TOOLS"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          "$BUILD_TOOLS/apkanalyzer" manifest application-id "$APK"
+          "$BUILD_TOOLS/apkanalyzer" manifest min-sdk "$APK"
+          "$BUILD_TOOLS/apkanalyzer" manifest target-sdk "$APK"
 
       - name: Rename APK
         run: cp apps/android/app/build/outputs/apk/release/app-release.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"

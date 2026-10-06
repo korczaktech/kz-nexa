@@ -66,15 +66,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="apps/android/app/build/outputs/apk/release/app-release.apk"
+          APK="$(find apps/android/app/build/outputs/apk/release -type f -name '*.apk' | head -n 1)"
+          test -n "$APK"
           test -s "$APK"
-
           echo "APK created successfully: $APK"
           ls -lh "$APK"
           sha256sum "$APK"
 
       - name: Rename APK
-        run: cp apps/android/app/build/outputs/apk/release/app-release.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"
+        run: |
+          set -euo pipefail
+          APK="$(find apps/android/app/build/outputs/apk/release -type f -name '*.apk' | head -n 1)"
+          test -s "$APK"
+          cp "$APK" "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"
 
       - name: Create GitHub Release with APK
         env:

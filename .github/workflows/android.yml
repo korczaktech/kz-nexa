@@ -27,3 +27,5 @@ jobs:
       - name: Build Android debug APK
         run: gradle --no-daemon --stacktrace -p apps/android :app:assembleDebug
       - run: node apps/android/verify-phase1.mjs
+
+# CI validation marker

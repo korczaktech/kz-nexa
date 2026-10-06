@@ -22,12 +22,13 @@ jobs:
         id: version
         shell: bash
         run: |
+          set -euo pipefail
           COMMITS_AFTER_RESET=$(git rev-list --count 6b3c0a21d3ac28b34378d9b4452e966c67dd8f72..HEAD)
           VERSION_NUMBER=$((COMMITS_AFTER_RESET - 2))
           if [ "$VERSION_NUMBER" -lt 2 ]; then VERSION_NUMBER=2; fi
           VERSION="0.0.0.${VERSION_NUMBER}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "NEXA_VERSION=$VERSION"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "NEXA_VERSION=${VERSION}"
 
       - uses: actions/setup-java@v5
         with:
@@ -47,7 +48,7 @@ jobs:
           test -n "$KEYSTORE_B64" || { echo "Keystore secret is missing"; exit 1; }
           test -n "$KEYSTORE_PASSWORD" || { echo "Keystore password secret is missing"; exit 1; }
           printf "%s" "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/nexa-release.jks"
-          test -s "$RUNNER_TEMP/nexa-release.jks" || { echo "Decoded keystore is empty"; exit 1; }
+          test -s "$RUNNER_TEMP/nexa-release.jks"
 
       - name: Build signed release APK
         env:
@@ -57,48 +58,32 @@ jobs:
           NEXA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD || secrets.RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$NEXA_KEYSTORE_PASSWORD" || { echo "Keystore password secret is missing"; exit 1; }
-          test -n "$NEXA_KEY_PASSWORD" || { echo "Key password secret is missing"; exit 1; }
+          test -n "$NEXA_KEYSTORE_PASSWORD"
+          test -n "$NEXA_KEY_PASSWORD"
           gradle --no-daemon --stacktrace -p apps/android :app:assembleRelease
 
       - name: Verify release APK
+        shell: bash
         run: |
           set -euo pipefail
           APK="apps/android/app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -perm -u+x | sort -V | tail -n 1 || true)"
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -perm -u+x 2>/dev/null | sort -V | tail -n 1 || true)"
           if [ -n "$APKSIGNER" ]; then
             echo "Using apksigner: $APKSIGNER"
             "$APKSIGNER" verify --verbose "$APK"
           else
-            echo "apksigner is not available on this runner; validating the signed APK archive instead"
+            echo "apksigner unavailable; validating APK archive and release signature entries"
             unzip -t "$APK" >/dev/null
-            unzip -l "$APK" | grep -E 'META-INF/.*\.(RSA|DSA|EC)
-
-      - name: Rename APK
-        run: cp apps/android/app/build/outputs/apk/release/app-release.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"
-
-      - name: Create GitHub Release with APK
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
-          if gh release view "$VERSION" >/dev/null 2>&1; then
-            echo "Release $VERSION already exists; refusing to overwrite a release."
-            exit 1
+            unzip -l "$APK" | grep -Eq 'META-INF/[^ ]+\.(RSA|DSA|EC)$'
           fi
-          gh release create "$VERSION" "Korczak-HUB-Nexa-${VERSION}.apk" --target "${GITHUB_SHA}" --title "Korczak Nexa ${VERSION}" --notes "Versão ${VERSION} do Korczak Nexa. APK Android assinado com a chave permanente de produção."
- >/dev/null
-          fi
-          APKANALYZER="$(find "$ANDROID_HOME/build-tools" -type f -name apkanalyzer -perm -u+x | sort -V | tail -n 1 || true)"
+
+          APKANALYZER="$(find "$ANDROID_HOME/build-tools" -type f -name apkanalyzer -perm -u+x 2>/dev/null | sort -V | tail -n 1 || true)"
           if [ -n "$APKANALYZER" ]; then
-            echo "Using apkanalyzer: $APKANALYZER"
             "$APKANALYZER" manifest application-id "$APK"
             "$APKANALYZER" manifest min-sdk "$APK"
             "$APKANALYZER" manifest target-sdk "$APK"
-          else
-            echo "apkanalyzer is not available; APK was already built successfully by Gradle"
           fi
 
       - name: Rename APK

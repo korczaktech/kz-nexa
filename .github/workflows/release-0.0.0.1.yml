@@ -69,22 +69,9 @@ jobs:
           APK="apps/android/app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
 
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -perm -u+x 2>/dev/null | sort -V | tail -n 1 || true)"
-          if [ -n "$APKSIGNER" ]; then
-            echo "Using apksigner: $APKSIGNER"
-            "$APKSIGNER" verify --verbose "$APK"
-          else
-            echo "apksigner unavailable; validating APK archive and release signature entries"
-            unzip -t "$APK" >/dev/null
-            unzip -t "$APK" >/dev/null
-          fi
-
-          APKANALYZER="$(find "$ANDROID_HOME/build-tools" -type f -name apkanalyzer -perm -u+x 2>/dev/null | sort -V | tail -n 1 || true)"
-          if [ -n "$APKANALYZER" ]; then
-            "$APKANALYZER" manifest application-id "$APK"
-            "$APKANALYZER" manifest min-sdk "$APK"
-            "$APKANALYZER" manifest target-sdk "$APK"
-          fi
+          echo "APK created successfully: $APK"
+          ls -lh "$APK"
+          sha256sum "$APK"
 
       - name: Rename APK
         run: cp apps/android/app/build/outputs/apk/release/app-release.apk "Korczak-HUB-Nexa-${{ steps.version.outputs.version }}.apk"

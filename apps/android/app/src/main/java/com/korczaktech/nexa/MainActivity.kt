@@ -37,13 +37,14 @@ class MainActivity:Activity(){ // stable startup path
   Thread{
    var retry=false
    try{
-    val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest")
+    val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=20")
     val conn=(url.openConnection() as HttpURLConnection).apply{
      instanceFollowRedirects=true
      requestMethod="GET"
      setRequestProperty("Accept","application/vnd.github+json")
      setRequestProperty("User-Agent","Korczak-Nexa-Updater")
-     setRequestProperty("Cache-Control","no-cache")
+     setRequestProperty("X-GitHub-Api-Version","2022-11-28")
+     setRequestProperty("Cache-Control","no-cache, no-store")
      setRequestProperty("Pragma","no-cache")
      connectTimeout=15000
      readTimeout=20000
@@ -53,29 +54,31 @@ class MainActivity:Activity(){ // stable startup path
     if(code !in 200..299)throw IOException("GitHub HTTP $code")
     val body=conn.inputStream.bufferedReader().use{it.readText()}
     conn.disconnect()
-    val release=JSONObject(body)
-    if(release.optBoolean("draft"))throw IOException("Release draft")
-    if(release.optBoolean("prerelease"))throw IOException("Latest release é pré-lançamento")
-    val tag=release.optString("tag_name").trim().removePrefix("v")
-    if(tag.isBlank())throw IOException("Latest sem tag")
-    val assets=release.optJSONArray("assets")?:throw IOException("Latest sem assets")
-    var downloadUrl=""
-    var fallbackUrl=""
-    for(i in 0 until assets.length()){
-     val asset=assets.getJSONObject(i)
-     if(!asset.optString("name").lowercase(Locale.ROOT).endsWith(".apk"))continue
-     if(asset.optString("state","uploaded")!="uploaded")continue
-     val candidate=asset.optString("browser_download_url").trim()
-     if(candidate.isBlank())continue
-     if(asset.optString("name").equals("Korczak-HUB-Nexa-$tag.apk",true)){downloadUrl=candidate;break}
-     if(fallbackUrl.isBlank())fallbackUrl=candidate
-    }
-    if(downloadUrl.isBlank())downloadUrl=fallbackUrl
-    if(downloadUrl.isBlank())throw IOException("Nenhum APK publicado na latest")
-    if(isNewer(tag,APP_VERSION)){
-     runOnUiThread{
-      if(!isFinishing&&!isDestroyed)showUpdateDialog(tag,downloadUrl)
+    val releases=JSONArray(body)
+    var bestTag=""
+    var bestUrl=""
+    for(i in 0 until releases.length()){
+     val release=releases.getJSONObject(i)
+     if(release.optBoolean("draft")||release.optBoolean("prerelease"))continue
+     val tag=release.optString("tag_name").trim().removePrefix("v")
+     if(tag.isBlank()||!isNewer(tag,APP_VERSION))continue
+     val assets=release.optJSONArray("assets")?:continue
+     var candidateUrl=""
+     for(j in 0 until assets.length()){
+      val asset=assets.getJSONObject(j)
+      if(asset.optString("state","uploaded")!="uploaded")continue
+      val name=asset.optString("name")
+      if(!name.lowercase(Locale.ROOT).endsWith(".apk"))continue
+      val candidate=asset.optString("browser_download_url").trim()
+      if(candidate.isBlank())continue
+      if(name.equals("Korczak-HUB-Nexa-$tag.apk",true)){candidateUrl=candidate;break}
+      if(candidateUrl.isBlank())candidateUrl=candidate
      }
+     if(candidateUrl.isBlank())continue
+     if(bestTag.isBlank()||isNewer(tag,bestTag)){bestTag=tag;bestUrl=candidateUrl}
+    }
+    if(bestTag.isNotBlank()){
+     runOnUiThread{if(!isFinishing&&!isDestroyed)showUpdateDialog(bestTag,bestUrl)}
     }
    }catch(_:Exception){retry=true}
    finally{
@@ -324,31 +327,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   override fun onDraw(c:Canvas){super.onDraw(c);if(columns.isEmpty()){val count=(width/22f).toInt().coerceAtLeast(1);repeat(count){columns.add(random.nextFloat()*-height)}};paint.typeface=Typeface.MONOSPACE;paint.textSize=15f;for(i in columns.indices){val x=i*22f;var y=columns[i];repeat(7){val ch=chars[random.nextInt(chars.length)].toString();paint.alpha=(255-it*28).coerceAtLeast(35);paint.color=Color.rgb(70,220,125);c.drawText(ch,x,y,paint);y+=18f};columns[i]+=12f;if(columns[i]>height+120)columns[i]=random.nextFloat()*-height};paint.alpha=255;paint.textAlign=Paint.Align.CENTER;paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);paint.textSize=42f;paint.color=Color.WHITE;c.drawText("Nexa",width/2f,height/2f-8f,paint);paint.textSize=13f;paint.color=Color.rgb(108,220,148);c.drawText("INICIALIZANDO",width/2f,height/2f+28f,paint);paint.textAlign=Paint.Align.LEFT}
   fun stop(){running=false;removeCallbacks(ticker)}
  }
- private fun applyHomeTheme(view:View){
- if(view===root)view.setBackgroundColor(pageBg())
- if(view is ViewGroup){
-  if(view.findViewById<View>(R.id.gridPreview)!=null)view.background=rounded(if(isDarkTheme)Color.rgb(20,37,28)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),22f)
-  for(i in 0 until view.childCount){
-   val child=view.getChildAt(i)
-   if(view.id==R.id.listRecents)child.background=rounded(surfaceColor(),surfaceBorder(),15f)
-   applyHomeTheme(child)
-  }
- }
- when(view.id){
-  R.id.header,R.id.navBar->view.background=rounded(surfaceColor(),surfaceBorder(),0f)
-  R.id.search->view.background=rounded(surfaceColor(),surfaceBorder(),14f)
-  R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites->view.background=rounded(surfaceColor(),surfaceBorder(),16f)
-  R.id.avatar->view.background=rounded(Color.rgb(19,122,84),Color.rgb(19,122,84),50f)
- }
- if(view is TextView){
-  when(view.currentTextColor){
-   Color.rgb(15,26,20)->view.setTextColor(inkColor())
-   Color.rgb(91,106,98),Color.rgb(91,113,101)->view.setTextColor(mutedColor())
-  }
- }
- if(view is ImageView && view.id==R.id.btnRefresh)view.setColorFilter(inkColor())
-}
-private fun home(){
+ private fun home(){
   try{
    root.removeAllViews()
    applySystemTheme()
@@ -356,7 +335,6 @@ private fun home(){
    
    val view=layoutInflater.inflate(R.layout.activity_main,root,false)
    root.addView(view)
-   applyHomeTheme(view)
    val name=profileName.ifBlank{"Nexa"}
    val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
    view.findViewById<TextView>(R.id.userName).text=name

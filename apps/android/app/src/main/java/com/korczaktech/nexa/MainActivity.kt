@@ -113,64 +113,67 @@ class MainActivity:Activity(){ // stable startup path
  private fun downloadUpdate(url:String,tag:String){
   showUpdateToast("Baixando Nexa $tag...",false)
   Thread{
+   var target:File?=null
    try{
-    val dm=getSystemService(DOWNLOAD_SERVICE) as android.app.DownloadManager
-    val fileName="Korczak-HUB-Nexa-$tag.apk"
-    val rq=android.app.DownloadManager.Request(Uri.parse(url)).apply{
-     setTitle("Korczak Nexa $tag")
-     setDescription("Atualização do aplicativo")
-     setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-     setMimeType("application/vnd.android.package-archive")
-     setAllowedOverMetered(true)
-     setAllowedOverRoaming(true)
-     setDestinationInExternalFilesDir(this@MainActivity,android.os.Environment.DIRECTORY_DOWNLOADS,fileName)
+    val updates=File(filesDir,"updates").apply{mkdirs()}
+    target=File(updates,"Korczak-HUB-Nexa-$tag.apk")
+    if(target.exists())target.delete()
+    val conn=(URL(url).openConnection() as HttpURLConnection).apply{
+     instanceFollowRedirects=true
+     requestMethod="GET"
+     setRequestProperty("User-Agent","Korczak-Nexa-Updater")
+     setRequestProperty("Accept","application/vnd.android.package-archive")
+     connectTimeout=20000
+     readTimeout=30000
     }
-    val id=dm.enqueue(rq)
-    val poll=object:Runnable{
-     override fun run(){
-      if(isFinishing||isDestroyed)return
-      val q=dm.query(android.app.DownloadManager.Query().setFilterById(id))
-      if(!q.moveToFirst()){q.close();updateHandler.postDelayed(this,1000);return}
-      val status=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS))
-      val reason=q.getInt(q.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_REASON))
-      q.close()
-      when(status){
-       android.app.DownloadManager.STATUS_SUCCESSFUL->{
-        val uri=dm.getUriForDownloadedFile(id)
-        if(uri==null){showUpdateToast("Não foi possível abrir a atualização.",true);return}
-        if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
-         pendingInstallUri=uri
-         runOnUiThread{AlertDialog.Builder(this@MainActivity).setTitle("Permitir atualização do Nexa").setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.").setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}.setNegativeButton("Agora não",null).show()}
-        }else launchApkInstaller(uri)
-       }
-       android.app.DownloadManager.STATUS_FAILED->showUpdateToast("Falha ao baixar a atualização ($reason). Tente novamente.",true)
-       else->updateHandler.postDelayed(this,1000)
-      }
-     }
+    if(conn.responseCode !in 200..299)throw IOException("GitHub HTTP ${conn.responseCode}")
+    conn.inputStream.use{input->FileOutputStream(target).use{output->
+     val buffer=ByteArray(64*1024);var n:Int
+     while(input.read(buffer).also{n=it}!=-1)output.write(buffer,0,n)
+    }}
+    conn.disconnect()
+    if(!target.exists()||target.length()<100_000L)throw IOException("APK inválido ou incompleto")
+    val archiveInfo=packageManager.getPackageArchiveInfo(target.absolutePath,0)
+    if(archiveInfo==null||archiveInfo.packageName!=packageName)throw IOException("O arquivo baixado não é um APK Nexa válido")
+    runOnUiThread{
+     val file=target ?: return@runOnUiThread
+     val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"\${packageName}.fileprovider",file)
+     if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
+      pendingInstallUri=uri
+      AlertDialog.Builder(this@MainActivity)
+       .setTitle("Permitir atualização do Nexa")
+       .setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.")
+       .setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}
+       .setNegativeButton("Agora não",null).show()
+     }else launchApkInstaller(uri)
     }
-    updateHandler.post(poll)
-   }catch(_:Exception){runOnUiThread{showUpdateToast("Falha ao iniciar a atualização.",true)}}
+   }catch(e:Exception){
+    target?.delete()
+    runOnUiThread{showUpdateToast("Falha na atualização: ${e.message ?: "arquivo inválido"}.",true)}
+   }
   }.start()
  }
-
  private fun launchApkInstaller(uri:Uri){
   try{
    val intent=Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
     data=uri
     type="application/vnd.android.package-archive"
-    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
+    putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE,true)
    }
+   grantUriPermission("com.android.packageinstaller",uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
    startActivity(intent)
   }catch(_:Exception){
    try{
-    startActivity(Intent(Intent.ACTION_VIEW).apply{
+    val intent=Intent(Intent.ACTION_VIEW).apply{
      data=uri
      type="application/vnd.android.package-archive"
-     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
      clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
-    })
-   }catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
+    }
+    startActivity(intent)
+   }catch(e:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
   }
  }
  private fun showUpdateToast(message:String,error:Boolean){val box=LinearLayout(this);box.orientation=LinearLayout.HORIZONTAL;box.gravity=Gravity.CENTER_VERTICAL;box.setPadding(dp(16),dp(10),dp(18),dp(10));box.background=rounded(if(error)Color.rgb(35,16,17)else Color.rgb(6,22,14),if(error)Color.rgb(150,65,75)else Color.rgb(73,220,128),18f);val icon=TextView(this);icon.text=if(error)"!" else "↻";icon.gravity=Gravity.CENTER;icon.textSize=18f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(if(error)Color.rgb(255,150,160)else Color.rgb(108,255,148));box.addView(icon,LinearLayout.LayoutParams(dp(30),dp(30)).apply{rightMargin=dp(10)});val tv=textView(message,13.5f,Color.WHITE);tv.typeface=Typeface.DEFAULT_BOLD;box.addView(tv,LinearLayout.LayoutParams(-2,-2));val toast=Toast(this);toast.duration=Toast.LENGTH_LONG;toast.view=box;toast.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(82));toast.show()}

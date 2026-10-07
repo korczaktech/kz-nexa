@@ -749,7 +749,7 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
   subScroll.addView(subs,FrameLayout.LayoutParams(-2,-2));page.addView(subScroll)
 
   val gridHost=FrameLayout(this).apply{setBackgroundColor(surfaceColor())}
-  grid=Grid();gridHost.addView(grid,FrameLayout.LayoutParams(-1,-1));page.addView(gridHost,LinearLayout.LayoutParams(-1,0,1f))
+  grid=Grid();grid.isFocusableInTouchMode=true;grid.setOnKeyListener{_,keyCode,event->if(event.action!=KeyEvent.ACTION_DOWN)return@setOnKeyListener false;val ctrl=event.isCtrlPressed||event.isMetaPressed;val shift=event.isShiftPressed;when{ctrl&&keyCode==KeyEvent.KEYCODE_C->{copy();true};ctrl&&keyCode==KeyEvent.KEYCODE_X->{cut();true};ctrl&&keyCode==KeyEvent.KEYCODE_V->{paste();true};ctrl&&keyCode==KeyEvent.KEYCODE_Z->{undo();true};ctrl&&keyCode==KeyEvent.KEYCODE_Y->{redo();true};ctrl&&keyCode==KeyEvent.KEYCODE_A->{grid.selStart=0;grid.selEnd=199;grid.selColStart=0;grid.selColEnd=49;grid.invalidate();true};keyCode==KeyEvent.KEYCODE_DPAD_LEFT->{grid.selColStart=(grid.selColStart-1).coerceAtLeast(0);if(!shift)grid.selColEnd=grid.selColStart;grid.invalidate();syncFormulaEditor();true};keyCode==KeyEvent.KEYCODE_DPAD_RIGHT->{grid.selColEnd=(grid.selColEnd+1).coerceAtMost(49);if(!shift)grid.selColStart=grid.selColEnd;grid.invalidate();syncFormulaEditor();true};keyCode==KeyEvent.KEYCODE_DPAD_UP->{grid.selStart=(grid.selStart-1).coerceAtLeast(0);if(!shift)grid.selEnd=grid.selStart;grid.invalidate();syncFormulaEditor();true};keyCode==KeyEvent.KEYCODE_DPAD_DOWN->{grid.selEnd=(grid.selEnd+1).coerceAtMost(199);if(!shift)grid.selStart=grid.selEnd;grid.invalidate();syncFormulaEditor();true};keyCode==KeyEvent.KEYCODE_TAB->{grid.selColStart=(grid.selColEnd+1).coerceAtMost(49);grid.selColEnd=grid.selColStart;syncFormulaEditor();grid.invalidate();true};keyCode==KeyEvent.KEYCODE_ENTER->{grid.selStart=(grid.selEnd+1).coerceAtMost(199);grid.selEnd=grid.selStart;syncFormulaEditor();grid.invalidate();true};else->false}};gridHost.addView(grid,FrameLayout.LayoutParams(-1,-1));page.addView(gridHost,LinearLayout.LayoutParams(-1,0,1f))
 
   val sheetBar=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(if(isDarkTheme)Color.rgb(16,25,20) else Color.WHITE)}
   val sheets=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(6),dp(8),dp(6))}
@@ -764,7 +764,7 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
     "Formatar"->{action("Estilo","Célula"){cellStyle()};action("Condicional","Regras"){conditional()};action("Validação","Dados"){validation()};action("Número","Formato"){numberFormat()};action("Bordas","Contorno"){border()};action("Preencher","Conteúdo"){fill()}}
     "Dados"->{action("Ordenar","Intervalo"){sortSelection()};action("Filtrar","Dados"){filterSelection()};action("Agrupar linha","Linhas"){groupRow()};action("Agrupar coluna","Colunas"){groupCol()};action("Grupos +/-","Expandir"){toggleGroups()};action("Mesclar","Células"){merge()};action("Desmesclar","Células"){unmerge()}}
     "Exibir"->{action("Zoom +","Ampliar"){grid.zoom*=1.15f;grid.invalidate()};action("Largura","Coluna"){resizeColumn()};action("Altura","Linha"){resizeRow()};action("Zoom -","Reduzir"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};action("Congelar","Painéis"){freeze()};action("Ocultar","Linhas/colunas"){hide()};action("Mostrar","Linhas/colunas"){show()}}
-    "Arquivo"->{action("Salvar","Nexa"){save()};action("Exportar","CSV/TSV/Nexa"){exportFile()};action("Copiar","Seleção"){copy()};action("Colar","Área de transferência"){paste()};action("Atualizar","Sincronizar"){phase2()};action("Sair","Editor"){home()}}
+    "Arquivo"->{action("Salvar","Nexa"){save()};action("Exportar","CSV/TSV/Nexa"){exportFile()};action("Copiar","Seleção"){copy()};action("Recortar","Seleção"){cut()};action("Colar","Área de transferência"){paste()};action("Atualizar","Sincronizar"){phase2()};action("Sair","Editor"){home()}}
   }}}
   listOf("Início","Inserir","Formatar","Dados","Exibir","Arquivo").forEach{category(it)}
   (categories.getChildAt(0) as View).performClick()
@@ -790,8 +790,8 @@ private fun shiftRangeCols(r:String,at:Int,d:Int):String{val p=r.split(":");fun 
 private fun deleteRangeRows(r:String,at:Int,d:Int):String?{val p=r.split(":");if(p.size!=2)return if(parseCellRef(p[0]).first in at until at+d)null else shiftRangeRows(r,at,-d);val a=parseCellRef(p[0]);val b=parseCellRef(p[1]);if(a.first>=at&&b.first<at+d)return null;return key(if(a.first>=at+d)a.first-d else a.first,a.second)+":"+key(if(b.first>=at+d)b.first-d else b.first,b.second)}
 private fun deleteRangeCols(r:String,at:Int,d:Int):String?{val p=r.split(":");if(p.size!=2)return if(parseCellRef(p[0]).second in at until at+d)null else shiftRangeCols(r,at,-d);val a=parseCellRef(p[0]);val b=parseCellRef(p[1]);if(a.second>=at&&b.second<at+d)return null;return key(a.first,if(a.second>=at+d)a.second-d else a.second)+":"+key(b.first,if(b.second>=at+d)b.second-d else b.second)}
 private fun shiftAllFormulaRefs(s:Sheet,rowAt:Int,rowDelta:Int,colDelta:Int,insert:Boolean=true,colAt:Int=0,delete:Boolean=false){val snapshot=s.cells.toMap();for((k,ce) in snapshot){if(!ce.input.startsWith("="))continue;var f=ce.input;f=f.replace(Regex("(\$?)([A-Z]+)(\$?)([0-9]+)")){m->var n=0;for(ch in m.groupValues[2])n=n*26+ch.code-64;var rr=m.groupValues[4].toInt();var cc=n;if(rowAt>0&&rr>=rowAt+1)rr+=if(delete)-rowDelta else rowDelta;if(colAt>0&&cc>=colAt+1)cc+=if(delete)-colDelta else colDelta;if(rr<1||cc<1)"#REF!" else (if(m.groupValues[1]=="$")"$" else "")+col(cc-1)+(if(m.groupValues[3]=="$")"$" else "")+rr};s.cells[k]=ce.copy(input=f)}}
-private fun resizeColumn(){val input=dialogInput("Largura em dp");input.inputType=2;input.setText(grid.cw.toInt().toString());nexaBuilder().setTitle("Largura da coluna").setView(input).setPositiveButton("Aplicar"){_,_->val n=input.text.toString().toFloatOrNull()?.coerceIn(48f,500f)?:grid.cw;grid.cw=n;grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
-private fun resizeRow(){val input=dialogInput("Altura em dp");input.inputType=2;input.setText(grid.rh.toInt().toString());nexaBuilder().setTitle("Altura da linha").setView(input).setPositiveButton("Aplicar"){_,_->val n=input.text.toString().toFloatOrNull()?.coerceIn(28f,180f)?:grid.rh;grid.rh=n;grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
+private fun resizeColumn(){val s=book!!.sheets[book!!.active];val current=s.columnWidths[grid.selColStart]?:grid.cw;val input=dialogInput("Largura em dp");input.inputType=2;input.setText(current.toInt().toString());nexaBuilder().setTitle("Largura da(s) coluna(s)").setView(input).setPositiveButton("Aplicar"){_,_->val n=input.text.toString().toFloatOrNull()?.coerceIn(48f,500f)?:current;snap();for(k in grid.selColStart..grid.selColEnd)s.columnWidths[k]=n;grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
+private fun resizeRow(){val s=book!!.sheets[book!!.active];val current=s.rowHeights[grid.selStart]?:grid.rh;val input=dialogInput("Altura em dp");input.inputType=2;input.setText(current.toInt().toString());nexaBuilder().setTitle("Altura da(s) linha(s)").setView(input).setPositiveButton("Aplicar"){_,_->val n=input.text.toString().toFloatOrNull()?.coerceIn(28f,180f)?:current;snap();for(r in grid.selStart..grid.selEnd)s.rowHeights[r]=n;grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
 private fun sortSelection(){val s=book!!.sheets[book!!.active];val rows=(grid.selStart..grid.selEnd).toList();val ordered=rows.sortedBy{(s.cells[key(it,grid.selColStart)]?.input?:"").lowercase()};snap();val old=ordered.map{r->(grid.selColStart..grid.selColEnd).map{k->s.cells[key(r,k)]?.copy()?:Cell()}};for((i,r) in rows.withIndex())for((j,k) in (grid.selColStart..grid.selColEnd).withIndex())s.cells[key(r,k)]=old[i][j];grid.invalidate();showNexaToast("Intervalo ordenado",NexaToastType.SUCCESS)}
 private fun filterSelection(){val s=book!!.sheets[book!!.active];snap();for(r in grid.selStart..grid.selEnd){if((s.cells[key(r,grid.selColStart)]?.input?:"").isBlank())s.hiddenRows.add(r)};grid.invalidate();showNexaToast("Filtro aplicado: vazios ocultados",NexaToastType.SUCCESS)}
 private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("Salvar","Nexa Completo","Exportar","Importar","Atualizar dados","Fechar editor")){_,which->when(which){0->save();1->phase2();2->exportFile();3->importFile();4->phase2Sync(book?.id?:"");5->pageBack()}}.show()}
@@ -833,6 +833,7 @@ private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("
  private fun fill(){val s=book!!.sheets[book!!.active];val h=grid.selEnd-grid.selStart+1;val w=grid.selColEnd-grid.selColStart+1;snap();val a=s.cells[key(grid.selStart,grid.selColStart)]?.input?:"";val b=s.cells[key(grid.selStart+minOf(1,h-1),grid.selColStart+minOf(1,w-1))]?.input?:"";for(r in grid.selStart..grid.selEnd)for(k in grid.selColStart..grid.selColEnd){if(r==grid.selStart&&k==grid.selColStart)continue;val dr=r-grid.selStart;val dc=k-grid.selColStart;var v=if(a.startsWith("="))shiftFormula(a,dr,dc) else a;val n1=a.replace(",",".").toDoubleOrNull();val n2=b.replace(",",".").toDoubleOrNull();if(n1!=null&&n2!=null&&!a.startsWith("=")&&!b.startsWith("=")){val delta=n2-n1;v=if(dr>0)String.format(Locale.US,"%.10f",n1+delta*dr).trimEnd('0').trimEnd('.') else String.format(Locale.US,"%.10f",n1+delta*dc).trimEnd('0').trimEnd('.')};val old=s.cells[key(r,k)];s.cells[key(r,k)]=(old?.copy(input=v)?:Cell(v))};grid.invalidate();showNexaToast("Preenchimento aplicado",NexaToastType.SUCCESS)}
  private fun shiftFormula(f:String,dr:Int,dc:Int):String=f.replace(Regex("(\\$?)([A-Z]+)(\\$?)([0-9]+)")){m->var n=0;for(ch in m.groupValues[2])n=n*26+ch.code-64;val ac=m.groupValues[1]=="$";val ar=m.groupValues[3]=="$";val rr=m.groupValues[4].toInt()+if(ar)0 else dr;val cc=n-1+if(ac)0 else dc;if(rr<1||cc<0)m.value else (if(ac)"$" else "")+col(cc)+(if(ar)"$" else "")+rr}
  private fun copy(){val s=book!!.sheets[book!!.active];val rows=(grid.selStart..grid.selEnd).map{r->(grid.selColStart..grid.selColEnd).joinToString("\t"){k->s.cells[key(r,k)]?.input?:""}};val cm=getSystemService(CLIPBOARD_SERVICE) as ClipboardManager;cm.setPrimaryClip(ClipData.newPlainText("Nexa",rows.joinToString("\n")))}
+private fun cut(){copy();snap();val s=book!!.sheets[book!!.active];for(r in grid.selStart..grid.selEnd)for(k in grid.selColStart..grid.selColEnd)s.cells.remove(key(r,k));grid.invalidate();showNexaToast("Seleção recortada",NexaToastType.SUCCESS)}
  private fun paste(){val cm=getSystemService(CLIPBOARD_SERVICE) as ClipboardManager;val v=cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()?:return;val rows=v.replace("\r\n","\n").replace("\r","\n").split("\n").map{it.split("\t")};snap();val s=book!!.sheets[book!!.active];for((dr,row) in rows.withIndex())for((dc,value) in row.withIndex())s.cells[key(grid.selStart+dr,grid.selColStart+dc)]=Cell(value);grid.invalidate()}
  private fun importFile(){startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).setType("*/*").addCategory(Intent.CATEGORY_OPENABLE),PICK)}
  private fun exportFile(){val opts=arrayOf("Nexa (.nexa)","CSV (.csv)","TSV (.tsv)");nexaBuilder().setTitle("Exportar").setItems(opts){_,which->val ext=if(which==0)"nexa" else if(which==1)"csv" else "tsv";startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/plain").putExtra(Intent.EXTRA_TITLE,(book!!.name.ifBlank{"nexa"})+"."+ext),SAVE+which)}.show()}
@@ -904,6 +905,10 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
  }
  private fun req(path:String,method:String,body:String?,auth:String?):Pair<Int,String>{val c=URL(API+path).openConnection() as HttpURLConnection;c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;if(auth!=null)c.setRequestProperty("Authorization","Bearer "+auth);c.setRequestProperty("Content-Type","application/json");if(body!=null){c.doOutput=true;c.outputStream.use{it.write(body.toByteArray())}};val code=c.responseCode;val i=if(code>=400)c.errorStream else c.inputStream;return code to i.bufferedReader().use{it.readText()}}
  inner class Grid:View(this){var zoom=1f;var panX=0f;var panY=0f;var selStart=0;var selEnd=0;var selColStart=0;var selColEnd=0;var cw=130f;var rh=52f;val head=48f;val p=Paint(1)
+   private fun colWidth(s:Sheet,k:Int)=s.columnWidths[k]?:cw
+   private fun rowHeight(s:Sheet,r:Int)=s.rowHeights[r]?:rh
+   private fun colOffset(s:Sheet,k:Int):Float{var x=0f;for(i in 0 until k)x+=colWidth(s,i);return x}
+   private fun rowOffset(s:Sheet,r:Int):Float{var y=0f;for(i in 0 until r)y+=rowHeight(s,i);return y}
    override fun onDraw(c:Canvas){
     val s=book!!.sheets[book!!.active]
     c.save()
@@ -922,26 +927,26 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     c.drawColor(bg)
     p.style=Paint.Style.FILL
     fun visible(r:Int,k:Int):Boolean{
-      val x=head+k*cw-if(k>=s.frozenCols)panX else 0f
-      val y=head+r*rh-if(r>=s.frozenRows)panY else 0f
-      return x+cw>=head&&x<=width/zoom&&y+rh>=head&&y<=height/zoom
+      val w=colWidth(s,k);val h=rowHeight(s,r)
+      val x=cellX(k);val y=cellY(r)
+      return x+w>=head&&x<=width/zoom&&y+h>=head&&y<=height/zoom
     }
-    fun cellX(k:Int)=head+k*cw-if(k>=s.frozenCols)panX else 0f
-    fun cellY(r:Int)=head+r*rh-if(r>=s.frozenRows)panY else 0f
+    fun cellX(k:Int)=head+colOffset(s,k)-if(k>=s.frozenCols)panX else 0f
+    fun cellY(r:Int)=head+rowOffset(s,r)-if(r>=s.frozenRows)panY else 0f
     for(r in 0 until 200)for(k in 0 until 50){
       if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
-      val x=cellX(k);val y=cellY(r)
+      val x=cellX(k);val y=cellY(r);val w=colWidth(s,k);val h=rowHeight(s,r)
       val selected=r in selStart..selEnd&&k in selColStart..selColEnd
       val active=r==selStart&&k==selColStart
       val ce=s.cells[key(r,k)]
       val base=if(r%2==1&&ce==null)if(dark)Color.rgb(18,27,22)else Color.rgb(250,252,251)else surface
       p.style=Paint.Style.FILL
       p.color=if(selected)selectFill else base
-      c.drawRect(x,y,x+cw,y+rh,p)
+      c.drawRect(x,y,x+w,y+h,p)
       if(ce!=null){
         val rule=s.rules.firstOrNull{ruleMatch(ce.input,key(r,k),it)}
         p.color=if(selected)selectFill else if(ce.background==Color.WHITE)surface else (rule?.bg?:ce.background)
-        c.drawRect(x+1,y+1,x+cw-1,y+rh-1,p)
+        c.drawRect(x+1,y+1,x+w-1,y+h-1,p)
         p.color=rule?.fg?:if(ce.fontColor==Color.DKGRAY)ink else ce.fontColor
         p.textSize=ce.fontSize.coerceIn(10f,28f)
         p.typeface=when{
@@ -952,58 +957,58 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
         }
         val tx=formatValue(showValue(ce.input,s),ce.numberFormat)
         val tw=p.measureText(tx)
-        val txp=when(ce.align){1->x+(cw-tw)/2f;2->x+cw-tw-dp(8);else->x+dp(8)}
-        val ty=y+rh/2f-(p.ascent()+p.descent())/2f
-        if(ce.wrap&&tw>cw-dp(16)){p.textSize=(ce.fontSize-1f).coerceAtLeast(9f)}
+        val txp=when(ce.align){1->x+(w-tw)/2f;2->x+w-tw-dp(8);else->x+dp(8)}
+        val ty=y+h/2f-(p.ascent()+p.descent())/2f
+        if(ce.wrap&&tw>w-dp(16)){p.textSize=(ce.fontSize-1f).coerceAtLeast(9f)}
         c.drawText(tx,txp,ty,p)
         if(ce.underline||ce.strike){
           p.style=Paint.Style.STROKE;p.strokeWidth=1.2f
           val ly=if(ce.strike)ty-p.textSize*0.32f else ty+1f
-          c.drawLine(txp,ly,minOf(txp+p.measureText(tx),x+cw-dp(5)),ly,p)
+          c.drawLine(txp,ly,minOf(txp+p.measureText(tx),x+w-dp(5)),ly,p)
           p.style=Paint.Style.FILL
         }
         if(ce.borderTop||ce.borderRight||ce.borderBottom||ce.borderLeft){
           p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=if(dark)Color.rgb(92,145,112)else Color.rgb(74,125,94)
-          if(ce.borderTop)c.drawLine(x,y,x+cw,y,p)
-          if(ce.borderRight)c.drawLine(x+cw,y,x+cw,y+rh,p)
-          if(ce.borderBottom)c.drawLine(x,y+rh,x+cw,y+rh,p)
-          if(ce.borderLeft)c.drawLine(x,y,x,y+rh,p)
+          if(ce.borderTop)c.drawLine(x,y,x+w,y,p)
+          if(ce.borderRight)c.drawLine(x+w,y,x+w,y+h,p)
+          if(ce.borderBottom)c.drawLine(x,y+h,x+w,y+h,p)
+          if(ce.borderLeft)c.drawLine(x,y,x,y+h,p)
           p.style=Paint.Style.FILL
         }
       }
-      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.FILL
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,y,x+w,y+h,p);p.style=Paint.Style.FILL
       if(active){
-        p.style=Paint.Style.STROKE;p.strokeWidth=2.5f;p.color=accent;c.drawRect(x+1.5f,y+1.5f,x+cw-1.5f,y+rh-1.5f,p)
-        p.style=Paint.Style.FILL;p.color=accent;c.drawRoundRect(x+cw-7f,y+rh-7f,x+cw-1f,y+rh-1f,2f,2f,p);p.color=Color.WHITE;c.drawCircle(x+cw-4f,y+rh-4f,1.3f,p)
+        p.style=Paint.Style.STROKE;p.strokeWidth=2.5f;p.color=accent;c.drawRect(x+1.5f,y+1.5f,x+w-1.5f,y+h-1.5f,p)
+        p.style=Paint.Style.FILL;p.color=accent;c.drawRoundRect(x+w-7f,y+h-7f,x+w-1f,y+h-1f,2f,2f,p);p.color=Color.WHITE;c.drawCircle(x+w-4f,y+h-4f,1.3f,p)
       }else if(selected){
-        p.style=Paint.Style.STROKE;p.strokeWidth=1.8f;p.color=accent;c.drawRect(x+1f,y+1f,x+cw-1f,y+rh-1f,p);p.style=Paint.Style.FILL
+        p.style=Paint.Style.STROKE;p.strokeWidth=1.8f;p.color=accent;c.drawRect(x+1f,y+1f,x+w-1f,y+h-1f,p);p.style=Paint.Style.FILL
       }
     }
     // Coluna/linha headers ficam fora da grade e acompanham a seleção.
     p.style=Paint.Style.FILL;p.color=header;c.drawRect(0f,0f,width/zoom,head,p);c.drawRect(0f,head,head,height/zoom,p)
-    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){
-      val x=cellX(k);if(x+cw<head||x>width/zoom)continue
+    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){\n      val w=colWidth(s,k)
+      val x=cellX(k);if(x+w<head||x>width/zoom)continue
       val selected=k in selColStart..selColEnd
-      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(x,0f,x+cw,head,p)
-      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,0f,x+cw,head,p);p.style=Paint.Style.FILL
+      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(x,0f,x+w,head,p)
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,0f,x+w,head,p);p.style=Paint.Style.FILL
       p.color=if(selected)accent else muted;p.textSize=13f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-      val label=col(k);val tw=p.measureText(label);c.drawText(label,x+(cw-tw)/2f,head/2f-(p.ascent()+p.descent())/2f,p)
+      val label=col(k);val tw=p.measureText(label);c.drawText(label,x+(w-tw)/2f,head/2f-(p.ascent()+p.descent())/2f,p)
     }
-    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){
-      val y=cellY(r);if(y+rh<head||y>height/zoom)continue
+    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){\n      val h=rowHeight(s,r)
+      val y=cellY(r);if(y+h<head||y>height/zoom)continue
       val selected=r in selStart..selEnd
-      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(0f,y,head,y+rh,p)
-      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(0f,y,head,y+rh,p);p.style=Paint.Style.FILL
+      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(0f,y,head,y+h,p)
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(0f,y,head,y+h,p);p.style=Paint.Style.FILL
       p.color=if(selected)accent else muted;p.textSize=12.5f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-      val label=(r+1).toString();val tw=p.measureText(label);c.drawText(label,head-dp(9)-tw,y+rh/2f-(p.ascent()+p.descent())/2f,p)
+      val label=(r+1).toString();val tw=p.measureText(label);c.drawText(label,head-dp(9)-tw,y+h/2f-(p.ascent()+p.descent())/2f,p)
     }
     // Canto superior esquerdo.
     p.style=Paint.Style.FILL;p.color=if(dark)Color.rgb(16,25,20)else Color.rgb(232,239,235);c.drawRect(0f,0f,head,head,p)
     p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(0f,0f,head,head,p)
     p.style=Paint.Style.FILL;p.color=accent;c.drawCircle(head/2f,head/2f,5f,p)
     // Sombras discretas de painéis congelados.
-    if(s.frozenCols>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head+s.frozenCols*cw-3f,head,head+s.frozenCols*cw+3f,height/zoom,p)}
-    if(s.frozenRows>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head,head+s.frozenRows*rh-3f,width/zoom,head+s.frozenRows*rh+3f,p)}
+    if(s.frozenCols>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head+colOffset(s,s.frozenCols)-3f,head,head+colOffset(s,s.frozenCols)+3f,height/zoom,p)}
+    if(s.frozenRows>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head,head+rowOffset(s,s.frozenRows)-3f,width/zoom,head+rowOffset(s,s.frozenRows)+3f,p)}
     c.restore()
    }
    private fun ruleMatch(v:String,k:String,r:Rule):Boolean{

@@ -37,48 +37,53 @@ class MainActivity:Activity(){ // stable startup path
   Thread{
    var retry=false
    try{
-    val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=20")
-    val conn=(url.openConnection() as HttpURLConnection).apply{
-     instanceFollowRedirects=true
-     requestMethod="GET"
-     setRequestProperty("Accept","application/vnd.github+json")
-     setRequestProperty("User-Agent","Korczak-Nexa-Updater")
-     setRequestProperty("X-GitHub-Api-Version","2022-11-28")
-     setRequestProperty("Cache-Control","no-cache, no-store")
-     setRequestProperty("Pragma","no-cache")
-     connectTimeout=15000
-     readTimeout=20000
-     useCaches=false
-    }
-    val code=conn.responseCode
-    if(code !in 200..299)throw IOException("GitHub HTTP $code")
-    val body=conn.inputStream.bufferedReader().use{it.readText()}
-    conn.disconnect()
-    val releases=JSONArray(body)
     var bestTag=""
     var bestUrl=""
-    for(i in 0 until releases.length()){
-     val release=releases.getJSONObject(i)
-     if(release.optBoolean("draft")||release.optBoolean("prerelease"))continue
-     val tag=release.optString("tag_name").trim().removePrefix("v")
-     if(tag.isBlank()||!isNewer(tag,APP_VERSION))continue
-     val assets=release.optJSONArray("assets")?:continue
-     var candidateUrl=""
-     for(j in 0 until assets.length()){
-      val asset=assets.getJSONObject(j)
-      if(asset.optString("state","uploaded")!="uploaded")continue
-      val name=asset.optString("name")
-      if(!name.lowercase(Locale.ROOT).endsWith(".apk"))continue
-      val candidate=asset.optString("browser_download_url").trim()
-      if(candidate.isBlank())continue
-      if(name.equals("Korczak-HUB-Nexa-$tag.apk",true)){candidateUrl=candidate;break}
-      if(candidateUrl.isBlank())candidateUrl=candidate
+    try{
+     val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=30")
+     val conn=(url.openConnection() as HttpURLConnection).apply{
+      instanceFollowRedirects=true;requestMethod="GET";setRequestProperty("Accept","application/vnd.github+json")
+      setRequestProperty("User-Agent","Korczak-Nexa-Updater/1.0");setRequestProperty("X-GitHub-Api-Version","2022-11-28")
+      setRequestProperty("Cache-Control","no-cache, no-store");setRequestProperty("Pragma","no-cache");useCaches=false
+      connectTimeout=12000;readTimeout=18000
      }
-     if(candidateUrl.isBlank())continue
-     if(bestTag.isBlank()||isNewer(tag,bestTag)){bestTag=tag;bestUrl=candidateUrl}
+     if(conn.responseCode in 200..299){
+      val releases=JSONArray(conn.inputStream.bufferedReader().use{it.readText()})
+      for(i in 0 until releases.length()){
+       val release=releases.getJSONObject(i)
+       if(release.optBoolean("draft")||release.optBoolean("prerelease"))continue
+       val tag=release.optString("tag_name").trim().removePrefix("v")
+       if(tag.isBlank()||!isNewer(tag,APP_VERSION))continue
+       val assets=release.optJSONArray("assets")?:continue
+       for(j in 0 until assets.length()){
+        val asset=assets.getJSONObject(j)
+        if(asset.optString("state","uploaded")!="uploaded")continue
+        val name=asset.optString("name")
+        val candidate=asset.optString("browser_download_url").trim()
+        if(!name.lowercase(Locale.ROOT).endsWith(".apk")||candidate.isBlank())continue
+        if(name.equals("Korczak-HUB-Nexa-$tag.apk",true)){bestTag=tag;bestUrl=candidate;break}
+        if(bestTag.isBlank()||isNewer(tag,bestTag)){bestTag=tag;bestUrl=candidate}
+       }
+      }
+     }
+     conn.disconnect()
+    }catch(_:Exception){}
+    if(bestTag.isBlank()){
+     val latest=URL("https://github.com/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection
+     latest.instanceFollowRedirects=true;latest.requestMethod="HEAD";latest.setRequestProperty("User-Agent","Korczak-Nexa-Updater/1.0")
+     latest.connectTimeout=12000;latest.readTimeout=12000
+     if(latest.responseCode in 200..399){
+      val tag=latest.url.path.substringAfterLast("/").trim().removePrefix("v")
+      if(tag.isNotBlank()&&isNewer(tag,APP_VERSION)){
+       bestTag=tag
+       bestUrl="https://github.com/korczaktech/kz-nexa/releases/download/$tag/Korczak-HUB-Nexa-$tag.apk"
+      }
+     }
+     latest.disconnect()
     }
-    if(bestTag.isNotBlank()){
-     runOnUiThread{if(!isFinishing&&!isDestroyed)showUpdateDialog(bestTag,bestUrl)}
+    if(bestTag.isNotBlank()&&bestUrl.isNotBlank()){
+     val tag=bestTag;val download=bestUrl
+     runOnUiThread{if(!isFinishing&&!isDestroyed)showUpdateDialog(tag,download)}
     }
    }catch(_:Exception){retry=true}
    finally{

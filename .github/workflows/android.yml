@@ -27,3 +27,5 @@ jobs:
       - name: Build Android debug APK
         run: gradle --no-daemon --stacktrace -p apps/android :app:assembleDebug
       - run: node apps/android/verify-phase1.mjs
+      - name: Verify Android editor completeness
+        run: node apps/android/verify-editor-complete.mjs

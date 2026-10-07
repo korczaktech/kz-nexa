@@ -22,6 +22,23 @@ android {
         versionCode = legacySafeVersionCode
         versionName = "0.0.0.$nexVersion"
     }
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("NEXA_KEYSTORE_FILE")
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("NEXA_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("NEXA_KEY_ALIAS")
+                keyPassword = System.getenv("NEXA_KEY_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

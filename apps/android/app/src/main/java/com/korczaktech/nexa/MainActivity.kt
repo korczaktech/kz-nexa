@@ -922,6 +922,10 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
  inner class Grid:View(this){var zoom=1f;var panX=0f;var panY=0f;var selStart=0;var selEnd=0;var selColStart=0;var selColEnd=0;var cw=130f;var rh=52f;val head=48f;val p=Paint(1)
    private fun colWidth(s:Sheet,k:Int)=s.columnWidths[k]?:cw
    private fun rowHeight(s:Sheet,r:Int)=s.rowHeights[r]?:rh
+   private fun mergedBounds(v:String):IntArray{val p=v.split(":");val a=parse(p[0]);val b=parse(p.getOrElse(1){p[0]});return intArrayOf(minOf(a.first,b.first),minOf(a.second,b.second),maxOf(a.first,b.first),maxOf(a.second,b.second))}
+   private fun mergedContains(v:String,r:Int,k:Int):Boolean{val b=mergedBounds(v);return r in b[0]..b[2]&&k in b[1]..b[3]}
+   private fun mbWidth(s:Sheet,v:String):Float{val b=mergedBounds(v);var n=0f;for(k in b[1]..b[3])n+=colWidth(s,k);return n}
+   private fun mbHeight(s:Sheet,v:String):Float{val b=mergedBounds(v);var n=0f;for(r in b[0]..b[2])n+=rowHeight(s,r);return n}
    private fun colOffset(s:Sheet,k:Int):Float{var x=0f;for(i in 0 until k)x+=colWidth(s,i);return x}
    private fun rowOffset(s:Sheet,r:Int):Float{var y=0f;for(i in 0 until r)y+=rowHeight(s,i);return y}
    override fun onDraw(c:Canvas){
@@ -953,7 +957,10 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     }
     for(r in 0 until 200)for(k in 0 until 50){
       if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
-      val x=cellX(k);val y=cellY(r);val w=colWidth(s,k);val h=rowHeight(s,r)
+      val x=cellX(k);val y=cellY(r);val baseW=colWidth(s,k);val baseH=rowHeight(s,r)
+      val merge=s.merged.firstOrNull{mergedContains(it,r,k)}
+      if(merge!=null){val mb=mergedBounds(merge);if(r!=mb[0]||k!=mb[1])continue}
+      val w=if(merge==null)baseW else (mbWidth(s,merge));val h=if(merge==null)baseH else (mbHeight(s,merge))
       val selected=r in selStart..selEnd&&k in selColStart..selColEnd
       val active=r==selStart&&k==selColStart
       val ce=s.cells[key(r,k)]

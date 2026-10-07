@@ -799,7 +799,7 @@ private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("
  private var formulaWriting=false
  private fun syncFormulaEditor(){val e=formulaEditor?:return;val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val v=s.cells[key(grid.selStart,grid.selColStart)]?.input?:"";if(e.text.toString()!=v){formulaWriting=true;e.setText(v);e.setSelection(e.length());formulaWriting=false}}
  private var formulaDraftSnap=false
- private fun updateCellFromFormula(v:String){val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val k=key(grid.selStart,grid.selColStart);if(!formulaDraftSnap){snap();formulaDraftSnap=true};if(!valid(v,s.validations[k]))return;if(v.isBlank())s.cells.remove(k)else{s.cells[k]=s.cells[k]?.also{it.input=v}?:Cell(v)};grid.invalidate()}
+ private fun updateCellFromFormula(v:String){val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val k=key(grid.selStart,grid.selColStart);if(!valid(v,s.validations[k]))return;if(!formulaDraftSnap){snap();formulaDraftSnap=true};if(v.isBlank())s.cells.remove(k)else{s.cells[k]=s.cells[k]?.also{it.input=v}?:Cell(v)};grid.invalidate()}
  private fun commitFormulaEditor(){if(formulaWriting)return;val e=formulaEditor?:return;val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val v=e.text.toString();val k=key(grid.selStart,grid.selColStart);if(v==(s.cells[k]?.input?:"")){formulaDraftSnap=false;return};if(!valid(v,s.validations[k])){showNexaToast("Valor inválido",NexaToastType.ERROR);syncFormulaEditor();formulaDraftSnap=false;return};if(!formulaDraftSnap)snap();formulaDraftSnap=false;if(v.isBlank())s.cells.remove(k)else{s.cells[k]=s.cells[k]?.also{it.input=v}?:Cell(v)};grid.invalidate()}
  private data class EditorHistory(val state:String,val row:Int,val rowEnd:Int,val col:Int,val colEnd:Int)
  private val history=ArrayDeque<EditorHistory>();private val future=ArrayDeque<EditorHistory>();private val collapsedRows=mutableSetOf<Int>();private val collapsedCols=mutableSetOf<Int>()
@@ -927,6 +927,9 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     c.drawColor(bg)
     p.style=Paint.Style.FILL
     fun visible(r:Int,k:Int):Boolean{
+      val rowCollapsed=s.groupedRows.isNotEmpty()&&collapsedRows.contains(s.groupedRows.minOrNull()?:-1)&&s.groupedRows.contains(r)
+      val colCollapsed=s.groupedCols.isNotEmpty()&&collapsedCols.contains(s.groupedCols.minOrNull()?:-1)&&s.groupedCols.contains(k)
+      if(rowCollapsed||colCollapsed)return false
       val w=colWidth(s,k);val h=rowHeight(s,r)
       val x=cellX(k);val y=cellY(r)
       return x+w>=head&&x<=width/zoom&&y+h>=head&&y<=height/zoom
@@ -986,7 +989,7 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     }
     // Coluna/linha headers ficam fora da grade e acompanham a seleção.
     p.style=Paint.Style.FILL;p.color=header;c.drawRect(0f,0f,width/zoom,head,p);c.drawRect(0f,head,head,height/zoom,p)
-    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){\n      val w=colWidth(s,k)
+    for(k in 0 until 50)if(!s.hiddenCols.contains(k)&&!(s.groupedCols.contains(k)&&collapsedCols.contains(s.groupedCols.minOrNull()?:-1))){\n      val w=colWidth(s,k)
       val x=cellX(k);if(x+w<head||x>width/zoom)continue
       val selected=k in selColStart..selColEnd
       p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(x,0f,x+w,head,p)
@@ -994,7 +997,7 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
       p.color=if(selected)accent else muted;p.textSize=13f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
       val label=col(k);val tw=p.measureText(label);c.drawText(label,x+(w-tw)/2f,head/2f-(p.ascent()+p.descent())/2f,p)
     }
-    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){\n      val h=rowHeight(s,r)
+    for(r in 0 until 200)if(!s.hiddenRows.contains(r)&&!(s.groupedRows.contains(r)&&collapsedRows.contains(s.groupedRows.minOrNull()?:-1))){\n      val h=rowHeight(s,r)
       val y=cellY(r);if(y+h<head||y>height/zoom)continue
       val selected=r in selStart..selEnd
       p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(0f,y,head,y+h,p)

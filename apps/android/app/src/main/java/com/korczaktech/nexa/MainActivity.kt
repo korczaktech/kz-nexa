@@ -335,6 +335,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    
    val view=layoutInflater.inflate(R.layout.activity_main,root,false)
    root.addView(view)
+   if(isDarkTheme) applyHomeDarkTheme(view)
    val name=profileName.ifBlank{"Nexa"}
    val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
    view.findViewById<TextView>(R.id.userName).text=name
@@ -385,6 +386,31 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted)
    view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
   }catch(x:Throwable){android.util.Log.e("Nexa","Home initialization failed",x);showHomeFailure(x)}
+ }
+ private fun applyHomeDarkTheme(view:View){
+  val bg=Color.rgb(12,20,16);val surface=Color.rgb(22,31,26);val border=Color.rgb(49,67,57);val ink=Color.rgb(239,248,242);val muted=Color.rgb(166,190,175);val green=Color.rgb(82,232,139)
+  view.setBackgroundColor(bg)
+  view.findViewById<View>(R.id.header).setBackgroundColor(bg)
+  view.findViewById<View>(R.id.scroll).setBackgroundColor(bg)
+  val scroll=view.findViewById<androidx.core.widget.NestedScrollView>(R.id.scroll)
+  val content=scroll.getChildAt(0)
+  content?.setBackgroundColor(bg)
+  content?.findViewById<View>(R.id.search)?.background=rounded(surface,border,14f)
+  content?.findViewById<TextView>(R.id.featuredName)?.setTextColor(Color.WHITE)
+  content?.findViewById<TextView>(R.id.featuredEdited)?.setTextColor(Color.rgb(188,235,208))
+  content?.findViewById<TextView>(R.id.btnSeeAll)?.setTextColor(green)
+  (content?.getChildAt(0) as? TextView)?.setTextColor(ink)
+  listOf(R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites).forEach{id->content?.findViewById<View>(id)?.let{it.background=rounded(surface,border,16f)}}
+  listOf(R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites).forEach{id->content?.findViewById<View>(id)?.let{box->if(box is ViewGroup)for(i in 0 until box.childCount){val child=box.getChildAt(i);if(child is TextView)child.setTextColor(ink);if(child is ImageView)child.setColorFilter(green)}}}
+  val list=content?.findViewById<LinearLayout>(R.id.listRecents)
+  list?.getChildAt(0)?.let{row->row.background=rounded(surface,border,14f);row.findViewById<TextView>(R.id.recentName)?.setTextColor(ink);row.findViewById<TextView>(R.id.recentMeta)?.setTextColor(muted);if(row is ViewGroup)for(i in 0 until row.childCount){val child=row.getChildAt(i);if(child is ImageView)child.setColorFilter(green)}}
+  view.findViewById<View>(R.id.navBar).setBackgroundColor(Color.rgb(16,25,20))
+  view.findViewById<View>(R.id.pillHome).background=rounded(Color.rgb(25,56,42),Color.TRANSPARENT,15f)
+  view.findViewById<ImageView>(R.id.iconHome).setColorFilter(green);view.findViewById<ImageView>(R.id.iconFiles).setColorFilter(muted);view.findViewById<ImageView>(R.id.iconTemplates).setColorFilter(muted);view.findViewById<ImageView>(R.id.iconMore).setColorFilter(muted)
+  view.findViewById<TextView>(R.id.labelHome).setTextColor(green);view.findViewById<TextView>(R.id.labelFiles).setTextColor(muted);view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted);view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
+  view.findViewById<ImageView>(R.id.btnRefresh).setColorFilter(ink);view.findViewById<TextView>(R.id.userName).setTextColor(ink)
+  view.findViewById<Button>(R.id.btnOpen).apply{background=rounded(surface,border,22f);setTextColor(green)}
+  val nav=view.findViewById<View>(R.id.navBar);if(nav is ViewGroup&&nav.childCount>0)nav.getChildAt(0).setBackgroundColor(Color.rgb(37,53,44))
  }
  private fun showHomeFailure(x:Throwable){
   try{

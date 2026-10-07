@@ -324,7 +324,31 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   override fun onDraw(c:Canvas){super.onDraw(c);if(columns.isEmpty()){val count=(width/22f).toInt().coerceAtLeast(1);repeat(count){columns.add(random.nextFloat()*-height)}};paint.typeface=Typeface.MONOSPACE;paint.textSize=15f;for(i in columns.indices){val x=i*22f;var y=columns[i];repeat(7){val ch=chars[random.nextInt(chars.length)].toString();paint.alpha=(255-it*28).coerceAtLeast(35);paint.color=Color.rgb(70,220,125);c.drawText(ch,x,y,paint);y+=18f};columns[i]+=12f;if(columns[i]>height+120)columns[i]=random.nextFloat()*-height};paint.alpha=255;paint.textAlign=Paint.Align.CENTER;paint.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD);paint.textSize=42f;paint.color=Color.WHITE;c.drawText("Nexa",width/2f,height/2f-8f,paint);paint.textSize=13f;paint.color=Color.rgb(108,220,148);c.drawText("INICIALIZANDO",width/2f,height/2f+28f,paint);paint.textAlign=Paint.Align.LEFT}
   fun stop(){running=false;removeCallbacks(ticker)}
  }
- private fun applyHomeTheme(view:View){  if(view===root)view.setBackgroundColor(pageBg())  if(view is ViewGroup){   if(view.findViewById<View>(R.id.gridPreview)!=null)view.background=rounded(if(isDarkTheme)Color.rgb(20,37,28)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),22f)   for(i in 0 until view.childCount){    val child=view.getChildAt(i)    if(view.id==R.id.listRecents)child.background=rounded(surfaceColor(),surfaceBorder(),15f)    applyHomeTheme(child)   }  }  when(view.id){   R.id.header,R.id.navBar->view.background=rounded(surfaceColor(),surfaceBorder(),0f)   R.id.search->view.background=rounded(surfaceColor(),surfaceBorder(),14f)   R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites->view.background=rounded(surfaceColor(),surfaceBorder(),16f)   R.id.avatar->view.background=rounded(Color.rgb(19,122,84),Color.rgb(19,122,84),50f)  }  if(view is TextView){   when(view.currentTextColor){    Color.rgb(15,26,20)->view.setTextColor(inkColor())    Color.rgb(91,106,98),Color.rgb(91,113,101)->view.setTextColor(mutedColor())   }  }  if(view is ImageView && view.id==R.id.btnRefresh)view.setColorFilter(inkColor()) } private fun home(){
+ private fun applyHomeTheme(view:View){
+ if(view===root)view.setBackgroundColor(pageBg())
+ if(view is ViewGroup){
+  if(view.findViewById<View>(R.id.gridPreview)!=null)view.background=rounded(if(isDarkTheme)Color.rgb(20,37,28)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),22f)
+  for(i in 0 until view.childCount){
+   val child=view.getChildAt(i)
+   if(view.id==R.id.listRecents)child.background=rounded(surfaceColor(),surfaceBorder(),15f)
+   applyHomeTheme(child)
+  }
+ }
+ when(view.id){
+  R.id.header,R.id.navBar->view.background=rounded(surfaceColor(),surfaceBorder(),0f)
+  R.id.search->view.background=rounded(surfaceColor(),surfaceBorder(),14f)
+  R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites->view.background=rounded(surfaceColor(),surfaceBorder(),16f)
+  R.id.avatar->view.background=rounded(Color.rgb(19,122,84),Color.rgb(19,122,84),50f)
+ }
+ if(view is TextView){
+  when(view.currentTextColor){
+   Color.rgb(15,26,20)->view.setTextColor(inkColor())
+   Color.rgb(91,106,98),Color.rgb(91,113,101)->view.setTextColor(mutedColor())
+  }
+ }
+ if(view is ImageView && view.id==R.id.btnRefresh)view.setColorFilter(inkColor())
+}
+private fun home(){
   try{
    root.removeAllViews()
    applySystemTheme()
@@ -426,7 +450,53 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
  it.addView(themeRow)
  it.addView(settingRow("Confirmações","Peça confirmação antes de ações importantes",true));it.addView(actionCard("Atualizações","Ver versão instalada e procurar novidades","↻"){updatesPage()});it.addView(actionCard("Dar feedback","Conte como podemos melhorar","♡"){feedbackPage()})}}
  private fun updatesPage(){simplePage("Atualizações","Versão instalada e novidades"){it.addView(infoCard("Nexa "+APP_VERSION,"Código da versão: "+APP_VERSION_CODE));it.addView(actionCard("Procurar atualização","Consultar a versão oficial mais recente","↻"){checkForUpdate();Toast.makeText(this,"Verificando atualizações…",Toast.LENGTH_SHORT).show()});it.addView(infoCard("Atualizador","As versões oficiais são distribuídas pelo GitHub Releases."))}}
- private fun feedbackPage(){simplePage("Dar Feedback","Envie uma mensagem diretamente para a equipe do Nexa"){ val intro=infoCard("Fale com a equipe","Seu feedback fica registrado no Nexa para análise da equipe. Escolha o tipo, dê um título e descreva o que aconteceu.");it.addView(intro) val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(18));background=rounded(surfaceColor(),surfaceBorder(),20f);elevation=dp(2).toFloat()} val typeLabel=textView("TIPO DE FEEDBACK",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f};form.addView(typeLabel) val category=Spinner(this).apply{background=rounded(if(isDarkTheme)Color.rgb(29,41,34) else Color.rgb(248,250,248),surfaceBorder(),14f);setPadding(dp(12),0,dp(12),0);adapter=ArrayAdapter<String>(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Sugestão","Problema","Elogio","Solicitação","Outro"))} form.addView(category,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(7);bottomMargin=dp(15)}) val subjectLabel=textView("TÍTULO",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f};form.addView(subjectLabel) val subject=inputField("Ex.: Sugestão para o editor").apply{background=rounded(surfaceColor(),surfaceBorder(),14f);setPadding(dp(15),0,dp(15),0)} form.addView(subject,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(7);bottomMargin=dp(15)}) val messageLabel=textView("MENSAGEM",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f};form.addView(messageLabel) val message=EditText(this).apply{hint="Conte o que aconteceu ou o que você gostaria de ver no Nexa";setTextColor(inkColor());setHintTextColor(mutedColor());textSize=15f;gravity=Gravity.TOP or Gravity.START;minLines=7;maxLines=10;setPadding(dp(15),dp(14),dp(15),dp(14));background=rounded(surfaceColor(),surfaceBorder(),14f);setOnFocusChangeListener{_,focused->background=rounded(surfaceColor(),if(focused)Color.rgb(82,232,139)else surfaceBorder(),14f)}} form.addView(message,LinearLayout.LayoutParams(-1,dp(158)).apply{topMargin=dp(7);bottomMargin=dp(16)}) val send=actionButton("Enviar feedback");form.addView(send,LinearLayout.LayoutParams(-1,dp(52)));send.setOnClickListener{sendFeedback(category.selectedItem.toString(),subject.text.toString().trim(),message.text.toString().trim(),send)} it.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})}} private fun aboutPage(){simplePage("Sobre o Nexa","Korczak Nexa"){val hero=LinearLayout(this);hero.orientation=LinearLayout.VERTICAL;hero.gravity=Gravity.CENTER;hero.setPadding(dp(24),dp(24),dp(24),dp(24));hero.background=rounded(if(isDarkTheme)Color.rgb(23,44,32)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),24f);val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_login_logo);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;hero.addView(logo,LinearLayout.LayoutParams(dp(92),dp(92)));val t=textView("Korczak Nexa",25f,inkColor());t.typeface=Typeface.DEFAULT_BOLD;hero.addView(t);hero.addView(textView("Suas planilhas. Sua organização. Seu Nexa.",13f,Color.rgb(145,205,164)));hero.addView(textView("Versão "+APP_VERSION,12f,Color.rgb(104,169,127)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)});it.addView(hero,LinearLayout.LayoutParams(-1,dp(220)).apply{bottomMargin=dp(16)});it.addView(infoCard("Korczak Technologies","O Nexa faz parte do Korczak HUB, criado para oferecer ferramentas digitais acessíveis e pensadas para o mercado brasileiro."));it.addView(infoCard("Tecnologia","Aplicativo Android nativo, com foco em desempenho, organização e uma experiência simples."))}}
+ private fun feedbackPage(){
+ simplePage("Dar Feedback","Envie uma mensagem diretamente para a equipe do Nexa"){
+  val intro=infoCard("Fale com a equipe","Seu feedback fica registrado no Nexa para análise da equipe. Escolha o tipo, dê um título e descreva o que aconteceu.")
+  it.addView(intro)
+  val form=LinearLayout(this).apply{
+   orientation=LinearLayout.VERTICAL
+   setPadding(dp(18),dp(18),dp(18),dp(18))
+   background=rounded(surfaceColor(),surfaceBorder(),20f)
+   elevation=dp(2).toFloat()
+  }
+  val typeLabel=textView("TIPO DE FEEDBACK",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f}
+  form.addView(typeLabel)
+  val category=Spinner(this).apply{
+   background=rounded(if(isDarkTheme)Color.rgb(29,41,34)else Color.rgb(248,250,248),surfaceBorder(),14f)
+   setPadding(dp(12),0,dp(12),0)
+   adapter=ArrayAdapter<String>(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Sugestão","Problema","Elogio","Solicitação","Outro"))
+  }
+  form.addView(category,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(7);bottomMargin=dp(15)})
+  val subjectLabel=textView("TÍTULO",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f}
+  form.addView(subjectLabel)
+  val subject=inputField("Ex.: Sugestão para o editor").apply{
+   background=rounded(surfaceColor(),surfaceBorder(),14f)
+   setPadding(dp(15),0,dp(15),0)
+  }
+  form.addView(subject,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(7);bottomMargin=dp(15)})
+  val messageLabel=textView("MENSAGEM",11f,mutedColor()).apply{typeface=Typeface.DEFAULT_BOLD;letterSpacing=.08f}
+  form.addView(messageLabel)
+  val message=EditText(this).apply{
+   hint="Conte o que aconteceu ou o que você gostaria de ver no Nexa"
+   setTextColor(inkColor())
+   setHintTextColor(mutedColor())
+   textSize=15f
+   gravity=Gravity.TOP or Gravity.START
+   minLines=7
+   maxLines=10
+   setPadding(dp(15),dp(14),dp(15),dp(14))
+   background=rounded(surfaceColor(),surfaceBorder(),14f)
+   setOnFocusChangeListener{_,focused->background=rounded(surfaceColor(),if(focused)Color.rgb(82,232,139)else surfaceBorder(),14f)}
+  }
+  form.addView(message,LinearLayout.LayoutParams(-1,dp(158)).apply{topMargin=dp(7);bottomMargin=dp(16)})
+  val send=actionButton("Enviar feedback")
+  form.addView(send,LinearLayout.LayoutParams(-1,dp(52)))
+  send.setOnClickListener{sendFeedback(category.selectedItem.toString(),subject.text.toString().trim(),message.text.toString().trim(),send)}
+  it.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
+ }
+}
+private fun aboutPage(){simplePage("Sobre o Nexa","Korczak Nexa"){val hero=LinearLayout(this);hero.orientation=LinearLayout.VERTICAL;hero.gravity=Gravity.CENTER;hero.setPadding(dp(24),dp(24),dp(24),dp(24));hero.background=rounded(if(isDarkTheme)Color.rgb(23,44,32)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),24f);val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_login_logo);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;hero.addView(logo,LinearLayout.LayoutParams(dp(92),dp(92)));val t=textView("Korczak Nexa",25f,inkColor());t.typeface=Typeface.DEFAULT_BOLD;hero.addView(t);hero.addView(textView("Suas planilhas. Sua organização. Seu Nexa.",13f,Color.rgb(145,205,164)));hero.addView(textView("Versão "+APP_VERSION,12f,Color.rgb(104,169,127)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)});it.addView(hero,LinearLayout.LayoutParams(-1,dp(220)).apply{bottomMargin=dp(16)});it.addView(infoCard("Korczak Technologies","O Nexa faz parte do Korczak HUB, criado para oferecer ferramentas digitais acessíveis e pensadas para o mercado brasileiro."));it.addView(infoCard("Tecnologia","Aplicativo Android nativo, com foco em desempenho, organização e uma experiência simples."))}}
  private fun morePage(){simplePage("Mais","Tudo o que não precisa ficar na navegação principal"){it.addView(actionCard("Meu perfil","Conta, nome e informações pessoais","✎"){profilePage()});it.addView(actionCard("Meu plano","Veja seu plano e recursos","◇"){planPage()});it.addView(actionCard("Configurações","Preferências do Nexa","⚙"){settingsPage()});it.addView(actionCard("Sobre o Nexa","Versão, produto e informações","ⓘ"){aboutPage()});it.addView(actionCard("Atualizações","Confira novas versões","↻"){updatesPage()});it.addView(actionCard("Dar Feedback","Envie uma sugestão para a equipe","♡"){feedbackPage()});it.addView(actionCard("Sair","Encerrar sessão","⇥"){logout()})}}
  private fun simplePage(title:String,subtitle:String,build:(LinearLayout)->Unit){
  if(!restoringPage&&root.childCount>0){val snapshot=mutableListOf<View>();while(root.childCount>0){snapshot.add(root.getChildAt(0));root.removeViewAt(0)};pageHistory.addLast(snapshot);if(pageHistory.size>30)pageHistory.removeFirst()}

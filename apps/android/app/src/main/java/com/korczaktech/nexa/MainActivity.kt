@@ -133,8 +133,10 @@ class MainActivity:Activity(){ // stable startup path
     }}
     conn.disconnect()
     if(!target.exists()||target.length()<100_000L)throw IOException("APK inválido ou incompleto")
-    val archiveInfo=packageManager.getPackageArchiveInfo(target.absolutePath,0)
-    if(archiveInfo==null||archiveInfo.packageName!=packageName)throw IOException("O arquivo baixado não é um APK Nexa válido")
+    java.io.FileInputStream(target).use{input->
+     val magic=ByteArray(4)
+     if(input.read(magic)!=4||magic[0].toInt()!=0x50||magic[1].toInt()!=0x4B||magic[2].toInt()!=0x03||magic[3].toInt()!=0x04)throw IOException("O download não retornou um APK válido")
+    }
     runOnUiThread{
      val file=target ?: return@runOnUiThread
      val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"\${packageName}.fileprovider",file)

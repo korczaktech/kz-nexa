@@ -45,31 +45,37 @@ private fun checkAboutStatus(updateView:TextView){updateView.text="Verificandoâ€
    var retry=false
    try{
     var bestTag="";var bestUrl=""
-    try{
-     val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases/latest").openConnection() as HttpURLConnection).apply{
-      instanceFollowRedirects=true;requestMethod="GET";setRequestProperty("Accept","application/vnd.github+json");setRequestProperty("User-Agent","Korczak-Nexa-Updater/1.0");setRequestProperty("X-GitHub-Api-Version","2022-11-28");setRequestProperty("Cache-Control","no-cache");useCaches=false;connectTimeout=12000;readTimeout=18000
-     }
-     if(conn.responseCode in 200..299){
-      val release=JSONObject(conn.inputStream.bufferedReader().use{it.readText()})
-      if(!release.optBoolean("draft")&&!release.optBoolean("prerelease")){
-       val tag=release.optString("tag_name").trim().removePrefix("v")
-       val assets=release.optJSONArray("assets")
-       if(tag.isNotBlank()&&assets!=null){
-        var fallback=""
-        for(j in 0 until assets.length()){
-         val asset=assets.getJSONObject(j);if(asset.optString("state","uploaded")!="uploaded")continue
-         val name=asset.optString("name");val candidate=asset.optString("browser_download_url").trim()
-         if(!name.lowercase(Locale.ROOT).endsWith(".apk")||candidate.isBlank())continue
-         if(fallback.isBlank())fallback=candidate
-         if(name.equals("Korczak-HUB-Nexa-$tag.apk",true)){bestUrl=candidate;break}
-        }
-        if(bestUrl.isBlank())bestUrl=fallback
-        if(bestUrl.isNotBlank()&&isNewer(tag,APP_VERSION))bestTag=tag
-       }
+    val conn=(URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=100").openConnection() as HttpURLConnection).apply{
+     instanceFollowRedirects=true;requestMethod="GET";setRequestProperty("Accept","application/vnd.github+json");setRequestProperty("User-Agent","Korczak-Nexa-Updater/1.0");setRequestProperty("X-GitHub-Api-Version","2022-11-28");setRequestProperty("Cache-Control","no-cache");useCaches=false;connectTimeout=12000;readTimeout=18000
+    }
+    if(conn.responseCode in 200..299){
+     val releases=JSONArray(conn.inputStream.bufferedReader().use{it.readText()})
+     var bestVersion:IntArray?=null
+     for(i in 0 until releases.length()){
+      val release=releases.getJSONObject(i)
+      if(release.optBoolean("draft")||release.optBoolean("prerelease"))continue
+      val tag=release.optString("tag_name").trim().removePrefix("v")
+      val version=parseVersion(tag)?:continue
+      if(!isNewer(tag,APP_VERSION))continue
+      val assets=release.optJSONArray("assets")?:continue
+      var candidate=""
+      for(j in 0 until assets.length()){
+       val asset=assets.getJSONObject(j)
+       if(asset.optString("state","uploaded")!="uploaded")continue
+       val name=asset.optString("name")
+       val url=asset.optString("browser_download_url").trim()
+       if(!name.endsWith(".apk",true)||url.isBlank())continue
+       if(name.equals("Korczak-HUB-Nexa-$tag.apk",true)){candidate=url;break}
+       if(candidate.isBlank())candidate=url
+      }
+      if(candidate.isNotBlank()&&(bestVersion==null||compareVersion(version,bestVersion!!)>0)){
+       bestVersion=version;bestTag=tag;bestUrl=candidate
       }
      }
-     conn.disconnect()
-    }catch(_:Exception){}
+    }else{
+     throw IOException("GitHub HTTP ${conn.responseCode}")
+    }
+    conn.disconnect()
     if(bestTag.isNotBlank()&&bestUrl.isNotBlank()){
      val tag=bestTag;val download=bestUrl
      runOnUiThread{if(!isFinishing&&!isDestroyed)showUpdateDialog(tag,download)}
@@ -77,6 +83,15 @@ private fun checkAboutStatus(updateView:TextView){updateView.text="Verificandoâ€
    }catch(_:Exception){retry=true}
    finally{updateCheckRunning=false;if(retry)updateHandler.postDelayed({checkForUpdate()},15000)}
   }.start()
+ }
+ private fun parseVersion(value:String):IntArray?{
+  val p=value.removePrefix("v").split(".")
+  if(p.isEmpty()||p.any{it.toIntOrNull()==null})return null
+  return IntArray(maxOf(4,p.size)){i->if(i<p.size)p[i].toInt()else 0}
+ }
+ private fun compareVersion(a:IntArray,b:IntArray):Int{
+  for(i in 0 until maxOf(a.size,b.size)){val x=if(i<a.size)a[i]else 0;val y=if(i<b.size)b[i]else 0;if(x!=y)return x.compareTo(y)}
+  return 0
  }
  private fun showUpdateDialog(tag:String,downloadUrl:String){
   if(updateDialogShowing||isFinishing||isDestroyed)return

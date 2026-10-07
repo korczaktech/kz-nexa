@@ -954,6 +954,7 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
    o.optJSONArray("groupedColumns")?.let{x->for(n in 0 until x.length())s.groupedCols.add(x.getInt(n))}
    o.optJSONArray("rowGroups")?.let{x->for(n in 0 until x.length())s.rowGroups.add(x.getString(n))}
    o.optJSONArray("columnGroups")?.let{x->for(n in 0 until x.length())s.colGroups.add(x.getString(n))}
+   o.optJSONArray("tables")?.let{x->for(n in 0 until x.length()){val q=x.getJSONObject(n);s.tables.add(Table(q.optString("id",UUID.randomUUID().toString()),q.optString("name","Tabela"),q.optInt("startRow"),q.optInt("endRow"),q.optInt("startCol"),q.optInt("endCol"),q.optInt("style",0),q.optBoolean("totals",false),q.optBoolean("filterEnabled",true)))}}
    o.optJSONArray("conditionalRules")?.let{x->for(n in 0 until x.length()){val q=x.getJSONObject(n);s.rules.add(Rule(q.optString("range"),q.optString("op"),q.optString("value"),q.optInt("bg",Color.rgb(22,77,49)),q.optInt("fg",Color.rgb(109,255,173))));}}
    o.optJSONObject("validationRules")?.let{x->for(k in x.keys()){val q=x.getJSONObject(k);val ar=q.optJSONArray("values")?:JSONArray();val vals=mutableListOf<String>();for(n in 0 until ar.length())vals.add(ar.getString(n));s.validations[k]=Validation(q.optString("type","text"),vals,if(q.has("min")&&!q.isNull("min"))q.optDouble("min") else null,if(q.has("max")&&!q.isNull("max"))q.optDouble("max") else null)}}
    ss.add(s)

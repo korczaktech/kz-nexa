@@ -523,7 +523,7 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
  val country=dialogInput("País");country.setText(getPreferences(0).getString("profileCountry",""))
  fun addField(label:String,e:EditText){card.addView(textView(label,12f,mutedColor()),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)});card.addView(e,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(4);bottomMargin=dp(8)})}
  addField("Nome",name);addField("E-mail",email);addField("Cidade",city);addField("País",country)
- val save=actionButton("Salvar alterações");card.addView(save,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(6),bottomMargin=dp(8)})
+ val save=actionButton("Salvar alterações");card.addView(save,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(6);bottomMargin=dp(8)})
  save.setOnClickListener{profileName=name.text.toString().trim().ifBlank{"Meu perfil"};getPreferences(0).edit().putString("profileName",profileName).putString("profileCity",city.text.toString().trim()).putString("profileCountry",country.text.toString().trim()).apply();showNexaToast("Perfil atualizado",NexaToastType.SUCCESS);profilePage()}
  it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
  it.addView(actionCard("Meu plano","Consultar plano e recursos","◇"){planPage()})

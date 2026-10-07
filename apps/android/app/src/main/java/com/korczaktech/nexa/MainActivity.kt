@@ -599,7 +599,60 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
  val row=LinearLayout(this);row.gravity=Gravity.CENTER_VERTICAL;row.setPadding(dp(14),dp(11),dp(10),dp(11));row.background=rounded(surfaceColor(),surfaceBorder(),17f);row.elevation=dp(1).toFloat();val ic=ImageView(this);ic.setImageResource(R.drawable.ic_settings);ic.setColorFilter(Color.rgb(19,122,84));row.addView(ic,LinearLayout.LayoutParams(dp(34),dp(34)).apply{rightMargin=dp(10)});val tx=LinearLayout(this);tx.orientation=LinearLayout.VERTICAL;val t=textView(title,14f,inkColor());t.typeface=Typeface.DEFAULT_BOLD;tx.addView(t);tx.addView(textView(sub,11.5f,Color.rgb(100,119,109)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)});row.addView(tx,LinearLayout.LayoutParams(0,-2,1f));val sw=Switch(this);sw.id=View.generateViewId();sw.isChecked=enabled;row.addView(sw);return row.apply{layoutParams=LinearLayout.LayoutParams(-1,dp(70)).apply{bottomMargin=dp(10)}}
 }
  private fun logout(){nexaBuilder().setTitle("Sair da conta?").setMessage("Sua sessão será encerrada neste aparelho. Você poderá entrar novamente depois.").setNegativeButton("Cancelar",null).setPositiveButton("Sair"){_,_->pageHistory.clear();getPreferences(0).edit().clear().apply();token=null;uid="";profileName="Meu perfil";login()}.show()}
- private fun editor(){root.removeAllViews();val l=LinearLayout(this);l.orientation=LinearLayout.VERTICAL;val bar=LinearLayout(this);bar.gravity=Gravity.CENTER_VERTICAL;fun b(s:String,f:()->Unit){Button(this).also{x->x.text=s;x.setOnClickListener{f()};bar.addView(x)}};b("Salvar"){save()};b("Nexa Completo"){phase2()};b("↶"){undo()};b("↷"){redo()};b("+ Aba"){addSheet()};b("Mesclar"){merge()};b("Desmesclar"){unmerge()};b("Congelar"){freeze()};b("Ocultar"){hide()};b("Mostrar"){show()};b("Zoom +"){grid.zoom*=1.15f;grid.invalidate()};b("Zoom -"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};b("B"){toggle("b")};b("I"){toggle("i")};b("U"){toggle("u")};b("S"){toggle("s")};b("←"){align(0)};b("↔"){align(1)};b("→"){align(2)};b("Tamanho"){fontSize()};b("Quebra"){wrap()};b("Bordas"){border()};b("Condicional"){conditional()};b("Validação"){validation()};b("Agrupar linha"){groupRow()};b("Agrupar coluna"){groupCol()};b("Grupos +/-"){toggleGroups()};b("Número"){numberFormat()};b("Preencher"){fill()};b("Copiar"){copy()};b("Colar"){paste()};b("Importar"){importFile()};b("Exportar"){exportFile()};b("Sair"){getPreferences(0).edit().clear().apply();token=null;login()};l.addView(bar);grid=Grid();l.addView(grid,LinearLayout.LayoutParams(-1,0,1f));root.addView(l)}
+ private fun editor(){
+  currentPageTarget=PageTarget{editor()}
+  root.removeAllViews()
+  val page=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(pageBg())}
+  val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(8),dp(10),dp(8));setBackgroundColor(surfaceColor())}
+  fun topIcon(label:String,click:()->Unit)=TextView(this).apply{text=label;gravity=Gravity.CENTER;textSize=19f;typeface=Typeface.DEFAULT_BOLD;setTextColor(inkColor());background=rounded(surfaceColor(),Color.TRANSPARENT,12f);setOnClickListener{click()};top.addView(this,LinearLayout.LayoutParams(dp(42),dp(42)))}
+  topIcon("‹"){pageBack()}
+  val titleBox=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),0,dp(4),0)}
+  val title=textView(book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha",16f,inkColor()).apply{typeface=Typeface.DEFAULT_BOLD;maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END}
+  val meta=textView("Nexa • Planilha",11f,mutedColor())
+  titleBox.addView(title);titleBox.addView(meta)
+  top.addView(titleBox,LinearLayout.LayoutParams(0,dp(42),1f))
+  topIcon("↶"){undo()};topIcon("↷"){redo()}
+  val save=TextView(this).apply{text="Salvar";gravity=Gravity.CENTER;textSize=13f;typeface=Typeface.DEFAULT_BOLD;setTextColor(if(isDarkTheme)Color.rgb(4,24,13) else Color.WHITE);background=rounded(if(isDarkTheme)Color.rgb(82,232,139) else Color.rgb(19,122,84),Color.TRANSPARENT,13f);setOnClickListener{save()}}
+  top.addView(save,LinearLayout.LayoutParams(dp(68),dp(40)).apply{leftMargin=dp(4)})
+  page.addView(top)
+
+  val formula=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(7),dp(10),dp(7));setBackgroundColor(if(isDarkTheme)Color.rgb(15,23,19) else Color.rgb(242,246,243))}
+  formula.addView(textView("fx",14f,if(isDarkTheme)Color.rgb(82,232,139) else Color.rgb(19,122,84)).apply{typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(32),dp(36)))
+  val formulaValue=textView("Selecione uma célula",13f,mutedColor()).apply{gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),0,dp(10),0);background=rounded(surfaceColor(),surfaceBorder(),10f);maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END}
+  formula.addView(formulaValue,LinearLayout.LayoutParams(0,dp(36),1f))
+  formula.addView(textView("⋮",22f,mutedColor()).apply{gravity=Gravity.CENTER;setOnClickListener{editorMoreMenu()}},LinearLayout.LayoutParams(dp(38),dp(36)))
+  page.addView(formula)
+
+  val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(surfaceColor())}
+  val categories=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(6),dp(8),dp(6))}
+  categoryScroll.addView(categories,HorizontalScrollView.LayoutParams(-2,-2));page.addView(categoryScroll)
+  val subScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(if(isDarkTheme)Color.rgb(18,27,22) else Color.rgb(247,249,247))}
+  val subs=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(5),dp(8),dp(5))}
+  subScroll.addView(subs,HorizontalScrollView.LayoutParams(-2,-2));page.addView(subScroll)
+
+  val gridHost=FrameLayout(this).apply{setBackgroundColor(surfaceColor())}
+  grid=Grid();gridHost.addView(grid,FrameLayout.LayoutParams(-1,-1));page.addView(gridHost,LinearLayout.LayoutParams(-1,0,1f))
+
+  val sheetBar=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(if(isDarkTheme)Color.rgb(16,25,20) else Color.WHITE)}
+  val sheets=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(6),dp(8),dp(6))}
+  fun refreshSheets(){sheets.removeAllViews();book?.sheets?.forEachIndexed{idx,s->val chip=TextView(this).apply{text=s.name;gravity=Gravity.CENTER;textSize=12f;typeface=if(idx==book?.active)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;setTextColor(if(idx==book?.active){if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(19,122,84)}else mutedColor());background=rounded(if(idx==book?.active)if(isDarkTheme)Color.rgb(25,56,42)else Color.rgb(235,246,239)Color.TRANSPARENT,Color.TRANSPARENT,12f);setPadding(dp(14),0,dp(14),0);setOnClickListener{book?.active=idx;grid.invalidate();refreshSheets()}};sheets.addView(chip,LinearLayout.LayoutParams(-2,dp(38)).apply{rightMargin=dp(5)})};val add=TextView(this).apply{text="+";gravity=Gravity.CENTER;textSize=21f;setTextColor(if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(19,122,84));background=rounded(surfaceColor(),surfaceBorder(),12f);setOnClickListener{addSheet();refreshSheets()}};sheets.addView(add,LinearLayout.LayoutParams(dp(42),dp(38)))}
+  refreshSheets();sheetBar.addView(sheets,HorizontalScrollView.LayoutParams(-2,-2));page.addView(sheetBar)
+
+  fun action(label:String,sub:String,click:()->Unit){val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(10),dp(6),dp(10),dp(6));background=rounded(surfaceColor(),Color.TRANSPARENT,12f);setOnClickListener{click()}}
+   box.addView(textView(label,14f,inkColor()).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD});box.addView(textView(sub,10f,mutedColor()).apply{gravity=Gravity.CENTER});subs.addView(box,LinearLayout.LayoutParams(-2,dp(52)).apply{rightMargin=dp(5)})}
+  fun category(name:String){val chip=TextView(this).apply{text=name;gravity=Gravity.CENTER;textSize=13f;typeface=Typeface.DEFAULT_BOLD;setTextColor(inkColor());setPadding(dp(16),0,dp(16),0);background=rounded(surfaceColor(),Color.TRANSPARENT,13f)};categories.addView(chip,LinearLayout.LayoutParams(-2,dp(38)).apply{rightMargin=dp(5)});chip.setOnClickListener{for(i in 0 until categories.childCount){val v=categories.getChildAt(i);v.background=rounded(surfaceColor(),Color.TRANSPARENT,13f);v.findViewById<TextView>(android.R.id.text1)?.setTextColor(inkColor())};chip.background=rounded(if(isDarkTheme)Color.rgb(25,56,42)else Color.rgb(235,246,239),Color.TRANSPARENT,13f);subs.removeAllViews();when(name){
+    "Início"->{action("Negrito","B"){toggle("b")};action("Itálico","I"){toggle("i")};action("Sublinhado","U"){toggle("u")};action("Tachado","S"){toggle("s")};action("Alinhar","Horizontal"){align(1)};action("Tamanho","Fonte"){fontSize()};action("Quebra","Texto"){wrap()};action("Bordas","Células"){border()};action("Número","Formato"){numberFormat()};action("Preencher","Células"){fill()}}
+    "Inserir"->{action("Nova aba","Planilha"){addSheet();refreshSheets()};action("Documento","Novo"){newDocument()};action("Importar","Arquivo"){importFile()};action("Imagem","Arquivo"){importFile()};action("Tabela","Dados"){showNexaToast("Selecione um intervalo para criar uma tabela",NexaToastType.INFO)};action("Comentário","Célula"){showNexaToast("Comentários de célula em breve",NexaToastType.INFO)}}
+    "Formatar"->{action("Estilo","Célula"){showNexaToast("Selecione uma célula ou intervalo",NexaToastType.INFO)};action("Condicional","Regras"){conditional()};action("Validação","Dados"){validation()};action("Número","Formato"){numberFormat()};action("Bordas","Contorno"){border()};action("Preencher","Conteúdo"){fill()}}
+    "Dados"->{action("Ordenar","Intervalo"){showNexaToast("Ordenação disponível no menu Dados",NexaToastType.INFO)};action("Filtrar","Dados"){showNexaToast("Filtro de dados disponível no menu Dados",NexaToastType.INFO)};action("Agrupar linha","Linhas"){groupRow()};action("Agrupar coluna","Colunas"){groupCol()};action("Grupos +/-","Expandir"){toggleGroups()};action("Mesclar","Células"){merge()};action("Desmesclar","Células"){unmerge()}}
+    "Exibir"->{action("Zoom +","Ampliar"){grid.zoom*=1.15f;grid.invalidate()};action("Zoom -","Reduzir"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};action("Congelar","Painéis"){freeze()};action("Ocultar","Linhas/colunas"){hide()};action("Mostrar","Linhas/colunas"){show()}}
+    "Arquivo"->{action("Salvar","Nexa"){save()};action("Exportar","CSV/TSV/Nexa"){exportFile()};action("Copiar","Seleção"){copy()};action("Colar","Área de transferência"){paste()};action("Atualizar","Sincronizar"){phase2()};action("Sair","Sessão"){getPreferences(0).edit().clear().apply();token=null;login()}}
+  }}
+  listOf("Início","Inserir","Formatar","Dados","Exibir","Arquivo").forEach{category(it)}
+  (categories.getChildAt(0) as View).performClick()
+  root.addView(page)
+ }
+ private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("Salvar","Nexa Completo","Exportar","Importar","Atualizar dados","Fechar editor")){_,which->when(which){0->save();1->phase2();2->exportFile();3->importFile();4->phase2Sync(book?.id?:"");5->pageBack()}}.show()}
  private val history=ArrayDeque<String>();private val future=ArrayDeque<String>();private val collapsedRows=mutableSetOf<Int>();private val collapsedCols=mutableSetOf<Int>()
  private fun snap(){history.addLast(toJson(book!!).toString());if(history.size>50)history.removeFirst();future.clear()}
  private fun undo(){if(history.isEmpty())return;future.addFirst(toJson(book!!).toString());book=from(JSONObject(history.removeLast()));grid.invalidate()}

@@ -335,7 +335,6 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    
    val view=layoutInflater.inflate(R.layout.activity_main,root,false)
    root.addView(view)
-   if(isDarkTheme) applyHomeDarkTheme(view)
    val name=profileName.ifBlank{"Nexa"}
    val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
    view.findViewById<TextView>(R.id.userName).text=name
@@ -385,6 +384,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    view.findViewById<TextView>(R.id.labelFiles).setTextColor(muted)
    view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted)
    view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
+   if(isDarkTheme) applyHomeDarkTheme(view)
   }catch(x:Throwable){android.util.Log.e("Nexa","Home initialization failed",x);showHomeFailure(x)}
  }
  private fun applyHomeDarkTheme(view:View){

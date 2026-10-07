@@ -1153,9 +1153,36 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
        "MEDIAN"->{val n=vals().mapNotNull{it.replace(",",".").toDoubleOrNull()}.sorted();if(n.isEmpty())0.0 else if(n.size%2==1)n[n.size/2] else (n[n.size/2-1]+n[n.size/2])/2}
        "LARGE"->{val n=vals(0).mapNotNull{it.replace(",",".").toDoubleOrNull()}.sortedDescending();n.getOrElse(arg(1).toInt()-1){0.0}}
        "SMALL"->{val n=vals(0).mapNotNull{it.replace(",",".").toDoubleOrNull()}.sorted();n.getOrElse(arg(1).toInt()-1){0.0}}
+       "VLOOKUP"->vLookup(args)
+       "HLOOKUP"->hLookup(args)
+       "INDEX"->indexLookup(args)
+       "MATCH"->matchLookup(args)
+       "XLOOKUP"->xLookup(args)
        else->throw Exception("function")
       }
     }
+    private fun vLookup(args:List<String>):Double{
+      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val range=rangeCells(args[1]);val colIndex=evalArg(args[2]).toInt()
+      if(colIndex<1)throw Exception("VALUE");val rows=rangeRows(range);for(row in rows){if(row.firstOrNull()?.let{cellText(it).equals(needle,true)}==true){return row.getOrNull(colIndex-1)?.let{it.replace(",",".").toDoubleOrNull()}?:0.0}}
+      if(args.size>3&&evalArg(args[3])!=0.0)throw Exception("N/A");return 0.0
+    }
+    private fun hLookup(args:List<String>):Double{
+      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val range=rangeCells(args[1]);val rowIndex=evalArg(args[2]).toInt();val rows=rangeRows(range)
+      if(rowIndex<1||rowIndex>rows.size)throw Exception("VALUE");val header=rows.firstOrNull()?:emptyList();val at=header.indexOfFirst{cellText(it).equals(needle,true)};if(at<0)return 0.0;return rows.getOrNull(rowIndex-1)?.getOrNull(at)?.replace(",",".")?.toDoubleOrNull()?:0.0
+    }
+    private fun indexLookup(args:List<String>):Double{
+      if(args.size<2)throw Exception("args");val rows=rangeRows(rangeCells(args[0]));val row=evalArg(args[1]).toInt();val col=if(args.size>2)evalArg(args[2]).toInt() else 1
+      if(row<1||col<1)throw Exception("VALUE");return rows.getOrNull(row-1)?.getOrNull(col-1)?.replace(",",".")?.toDoubleOrNull()?:0.0
+    }
+    private fun matchLookup(args:List<String>):Double{
+      if(args.size<2)throw Exception("args");val needle=criteriaText(args[0]);val values=argumentValues(args[1]);val exact=if(args.size>2)evalArg(args[2]).toInt() else 0;val at=values.indexOfFirst{if(exact==0)it.equals(needle,true) else it.equals(needle,true)};return if(at<0)0.0 else (at+1).toDouble()
+    }
+    private fun xLookup(args:List<String>):Double{
+      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val lookup=argumentValues(args[1]);val result=argumentValues(args[2]);val at=lookup.indexOfFirst{it.equals(needle,true)};return if(at<0){if(args.size>3)evalArg(args[3]) else 0.0}else result.getOrNull(at)?.replace(",",".")?.toDoubleOrNull()?:0.0
+    }
+    private fun rangeCells(arg:String):List<String>{return argumentValues(arg)}
+    private fun rangeRows(arg:String):List<List<String>>{val t=arg.trim().split(":");if(t.size!=2)throw Exception("REF");val a=cellPoint(t[0]);val b=cellPoint(t[1]);return (minOf(a.first,b.first)..maxOf(a.first,b.first)).map{r->(minOf(a.second,b.second)..maxOf(a.second,b.second)).map{c->resolveRaw(sheet,key(r,c))}}}
+    private fun cellText(v:String)=v.trim()
     private fun evalArg(arg:String):Double{val t=arg.trim();if(t.startsWith(""")&&t.endsWith("""))return t.substring(1,t.length-1).replace(",",".").toDoubleOrNull()?:0.0;return FormulaParser(t,sheet,seen).parse().replace(",",".").toDoubleOrNull()?:0.0}
     private fun countIf(args:List<String>):Double{if(args.size<2)throw Exception("args");val values=argumentValues(args[0]);val criteria=criteriaText(args[1]);return values.count{matchesCriteria(it,criteria)}.toDouble()}
     private fun sumIf(args:List<String>):Double{if(args.size<2)throw Exception("args");val criteriaVals=argumentValues(args[0]);val criteria=criteriaText(args[1]);val sumVals=if(args.size>2)argumentValues(args[2]) else criteriaVals;return criteriaVals.indices.filter{it<sumVals.size&&matchesCriteria(criteriaVals[it],criteria)}.sumOf{sumVals[it].replace(",",".").toDoubleOrNull()?:0.0}}

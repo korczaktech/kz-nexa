@@ -420,7 +420,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    view.findViewById<View>(R.id.navHome).setOnClickListener{home()}
    view.findViewById<View>(R.id.navFiles).setOnClickListener{filesPage()}
    view.findViewById<View>(R.id.btnCreate).setOnClickListener{newDocument()}
-   view.findViewById<View>(R.id.navTemplates).setOnClickListener{templatesPage()}
+   view.findViewById<View>(R.id.navTemplates).setOnClickListener{templatesPage()};view.findViewById<View>(R.id.iconTemplates).setOnClickListener{templatesPage()};view.findViewById<View>(R.id.labelTemplates).setOnClickListener{templatesPage()}
    view.findViewById<View>(R.id.navMore).setOnClickListener{morePage()}
    val green=Color.rgb(19,122,84);val muted=Color.rgb(91,106,98)
    view.findViewById<View>(R.id.pillHome).visibility=View.VISIBLE
@@ -551,16 +551,33 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
   it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
  }
 }}
- private fun settingsPage(){simplePage("Configurações","Personalize a experiência do Nexa"){
- val auto=getPreferences(0).getBoolean("autoUpdates",true)
- val autoRow=settingRow("Atualizações automáticas","Verificar novas versões ao iniciar",auto);val autoSwitch=(autoRow as ViewGroup).getChildAt(2) as Switch;autoSwitch.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean("autoUpdates",v).apply()};autoRow.setOnClickListener{autoSwitch.isChecked=!autoSwitch.isChecked};it.addView(autoRow)
- val themeRow=settingRow("Tema escuro","Alternar entre tema claro e tema escuro",isDarkTheme);val themeSwitch=(themeRow as ViewGroup).getChildAt(2) as Switch;val applyTheme={checked:Boolean->isDarkTheme=checked;getPreferences(0).edit().putBoolean("darkTheme",checked).apply();applySystemTheme();root.post{settingsPage()}};themeSwitch.setOnCheckedChangeListener{_,checked->if(checked!=isDarkTheme)applyTheme(checked)};themeRow.setOnClickListener{themeSwitch.isChecked=!themeSwitch.isChecked};it.addView(themeRow)
- val confirm=getPreferences(0).getBoolean("confirmActions",true);val confirmRow=settingRow("Confirmações","Pedir confirmação antes de ações importantes",confirm);val confirmSwitch=(confirmRow as ViewGroup).getChildAt(2) as Switch;confirmSwitch.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean("confirmActions",v).apply()};confirmRow.setOnClickListener{confirmSwitch.isChecked=!confirmSwitch.isChecked};it.addView(confirmRow)
- it.addView(actionCard("Idioma","Português (Brasil)","文"){showNexaToast("Idioma: Português (Brasil)",NexaToastType.SELECTION)})
- it.addView(actionCard("Armazenamento","Gerenciar espaço e arquivos locais","▰"){storagePage()})
- it.addView(actionCard("Atualizações","Versão instalada e novidades","↻"){updatesPage()})
- it.addView(actionCard("Dar feedback","Conte como podemos melhorar","♡"){feedbackPage()})
-}}private fun updatesPage(){simplePage("Atualizações","Versão instalada e novidades"){it.addView(infoCard("Nexa "+APP_VERSION,"Código da versão: "+APP_VERSION_CODE));it.addView(actionCard("Procurar atualização","Consultar a versão oficial mais recente","↻"){checkForUpdate();showNexaToast("Verificando atualizações…",NexaToastType.SELECTION)});it.addView(infoCard("Atualizador","As versões oficiais são distribuídas pelo GitHub Releases."))}}
+ private fun settingsPage(){simplePage("Configurações","Controle como o Nexa funciona neste aparelho"){
+ fun boolSetting(title:String,sub:String,key:String,default:Boolean):View{
+  val row=settingRow(title,sub,getPreferences(0).getBoolean(key,default))
+  val sw=(row as ViewGroup).getChildAt(2) as Switch
+  sw.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean(key,v).apply();showNexaToast(if(v)"$title ativado" else "$title desativado",NexaToastType.SELECTION)}
+  row.setOnClickListener{sw.isChecked=!sw.isChecked}
+  return row
+ }
+ it.addView(infoCard("Preferências do aparelho","As opções são salvas localmente e controlam o comportamento do aplicativo."))
+ it.addView(boolSetting("Tema escuro","Usar a aparência escura do Nexa","darkTheme",isDarkTheme).apply{
+  val sw=(this as ViewGroup).getChildAt(2) as Switch
+  sw.setOnCheckedChangeListener{_,checked->if(checked!=isDarkTheme){isDarkTheme=checked;getPreferences(0).edit().putBoolean("darkTheme",checked).apply();applySystemTheme();root.post{settingsPage()}}}
+ })
+ it.addView(boolSetting("Atualizações automáticas","Verificar novas versões ao iniciar","autoUpdates",true))
+ it.addView(boolSetting("Confirmações","Confirmar ações importantes","confirmActions",true))
+ it.addView(boolSetting("Notificações","Permitir avisos do aplicativo","notificationsEnabled",true))
+ it.addView(boolSetting("Som de interface","Usar sons de confirmação","uiSounds",false))
+ it.addView(boolSetting("Salvar automaticamente","Salvar alterações do editor periodicamente","autosave",true))
+ it.addView(boolSetting("Sincronização automática","Sincronizar documentos quando houver conexão","autoSync",true))
+ it.addView(boolSetting("Abrir último documento","Restaurar o último documento usado quando possível","openLastDocument",true))
+ it.addView(actionCard("Idioma","Português (Brasil)","文"){nexaBuilder().setTitle("Idioma").setSingleChoiceItems(arrayOf("Português (Brasil)","English","Español"),getPreferences(0).getInt("languageIndex",0)){d,which->getPreferences(0).edit().putInt("languageIndex",which).apply();d.dismiss();showNexaToast("Idioma salvo",NexaToastType.SUCCESS)}.setNegativeButton("Cancelar",null).show()})
+ it.addView(actionCard("Editor","Preferências de edição e planilha","▤"){editorSettingsPage()})
+ it.addView(actionCard("Privacidade","Dados locais, sessão e permissões","●"){privacyPage()})
+ it.addView(actionCard("Armazenamento","Uso de espaço e arquivos locais","▰"){storagePage()})
+ it.addView(actionCard("Atualizações","Versão e atualizações disponíveis","↻"){updatesPage()})
+ it.addView(actionCard("Dar feedback","Enviar uma mensagem para a equipe","♡"){feedbackPage()})
+}}
  private fun feedbackPage(){
  simplePage("Dar Feedback","Envie uma mensagem diretamente para a equipe do Nexa"){
   val intro=infoCard("Fale com a equipe","Seu feedback fica registrado no Nexa para análise da equipe. Escolha o tipo, dê um título e descreva o que aconteceu.")
@@ -621,7 +638,18 @@ private fun aboutPage(){simplePage("Sobre o Nexa","Status do produto e informaç
  it.addView(infoCard("Segurança","As versões oficiais são distribuídas com assinatura de produção e o aplicativo solicita apenas permissões necessárias."))
  checkAboutStatus(updateStatus)
 }}
- private fun morePage(){simplePage("Mais","Tudo o que não precisa ficar na navegação principal"){it.addView(actionCard("Meu perfil","Conta, nome e informações pessoais","✎"){profilePage()});it.addView(actionCard("Meu plano","Veja seu plano e recursos","◇"){planPage()});it.addView(actionCard("Configurações","Preferências do Nexa","⚙"){settingsPage()});it.addView(actionCard("Segurança da conta","Sessão e proteção da conta","●"){securityPage()});it.addView(actionCard("Sobre o Nexa","Versão, produto e informações","ⓘ"){aboutPage()});it.addView(actionCard("Atualizações","Confira novas versões","↻"){updatesPage()});it.addView(actionCard("Dar Feedback","Envie uma sugestão para a equipe","♡"){feedbackPage()});it.addView(actionCard("Sincronizar agora","Sincronize a planilha atual","↻"){val id=book?.id;if(id.isNullOrBlank())showNexaToast("Salve o documento antes de sincronizar.",NexaToastType.WARNING)else phase2Sync(id)});it.addView(actionCard("Sair","Encerrar sessão","⇥"){logout()})}}
+ private fun morePage(){simplePage("Mais","Central de conta, aplicativo e suporte"){
+ it.addView(actionCard("Meu perfil","Editar dados pessoais e preferências da conta","✎"){profilePage()})
+ it.addView(actionCard("Meu plano","Planos, recursos e plano atual","◇"){planPage()})
+ it.addView(actionCard("Configurações","Preferências, aparência e comportamento","⚙"){settingsPage()})
+ it.addView(actionCard("Segurança da conta","Sessão, autenticação e proteção local","●"){securityPage()})
+ it.addView(actionCard("Sobre o Nexa","Status público, versões e compatibilidade","ⓘ"){aboutPage()})
+ it.addView(actionCard("Atualizações","Versão instalada e disponibilidade de atualização","↻"){updatesPage()})
+ it.addView(actionCard("Dar Feedback","Enviar sugestões, problemas e elogios","♡"){feedbackPage()})
+ it.addView(actionCard("Armazenamento","Espaço local e arquivos do aplicativo","▰"){storagePage()})
+ it.addView(actionCard("Sincronização","Sincronizar a planilha atual com o NexaAPI","↻"){val id=book?.id;if(id.isNullOrBlank())showNexaToast("Salve a planilha antes de sincronizar.",NexaToastType.WARNING)else phase2Sync(id)})
+ it.addView(actionCard("Sair","Encerrar a sessão neste aparelho","⇥"){logout()})
+}}
  private fun simplePage(title:String,subtitle:String,build:(LinearLayout)->Unit){
  val target=PageTarget{renderSimplePage(title,subtitle,build)}
  if(!restoringPage){pageHistory.addLast(currentPageTarget?:PageTarget(null));if(pageHistory.size>30)pageHistory.removeFirst()}
@@ -638,7 +666,34 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
  page.addView(header,LinearLayout.LayoutParams(-1,dp(68)));val scroll=ScrollView(this);scroll.isFillViewport=true;scroll.setBackgroundColor(pageBg());val content=LinearLayout(this);content.orientation=LinearLayout.VERTICAL;content.setPadding(dp(18),dp(18),dp(18),dp(18));build(content);scroll.addView(content);page.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));page.addView(bottomNav(navSelection(title)));root.addView(page)
 }
  private fun navSelection(title:String):Int=when(title){"Arquivos","Todos os documentos","Documentos favoritos","Pastas","Atividade recente","Lixeira","Adicionar arquivo","Armazenamento"->1;"Modelos"->2;"Mais","Meu perfil","Meu plano","Configurações","Sobre o Nexa","Atualizações","Dar Feedback","Sair"->3;else->0}
- private fun templatesPage(){simplePage("Modelos","Escolha um modelo pela prévia e comece a editar"){val previews=listOf("Orçamento","Planejamento","Relatório");for((index,name) in previews.withIndex()){val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(14),dp(14),dp(14),dp(14));card.background=rounded(surfaceColor(),surfaceBorder(),18f);card.elevation=dp(1).toFloat();val preview=LinearLayout(this);preview.orientation=LinearLayout.VERTICAL;for(rowIndex in 0 until 4){val row=LinearLayout(this);row.orientation=LinearLayout.HORIZONTAL;for(colIndex in 0 until 6){val cell=View(this);val highlighted=(rowIndex==0&&colIndex==index+1)||(rowIndex==2&&colIndex==3);cell.setBackgroundResource(if(highlighted)R.drawable.bg_cell_sel else if((rowIndex+colIndex)%4==0)R.drawable.bg_cell_hl else R.drawable.bg_cell);row.addView(cell,LinearLayout.LayoutParams(0,dp(14),1f).apply{setMargins(dp(2),dp(2),dp(2),dp(2))})};preview.addView(row,LinearLayout.LayoutParams(-1,dp(18)))};card.addView(preview,LinearLayout.LayoutParams(-1,dp(80)));val title=textView(name,16f,inkColor());title.typeface=Typeface.DEFAULT_BOLD;card.addView(title,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)});card.addView(textView("Prévia do modelo",12f,mutedColor()),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)});val open=actionButton("Usar este modelo");card.addView(open,LinearLayout.LayoutParams(-1,dp(46)).apply{topMargin=dp(11)});open.setOnClickListener{newDocument()};it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})}}}
+ private fun templatesPage(){simplePage("Modelos","Modelos prontos para criar uma nova planilha"){
+ it.addView(infoCard("Biblioteca de modelos","Escolha uma estrutura pronta. O modelo abre diretamente no editor para você personalizar e salvar."))
+ val models=listOf(
+  Triple("Orçamento","Controle receitas, despesas e saldo.","▤"),
+  Triple("Planejamento","Organize tarefas, prazos e responsáveis.","◷"),
+  Triple("Relatório","Estruture indicadores e resultados.","▤"),
+  Triple("Controle financeiro","Acompanhe entradas, saídas e categorias.","▤"),
+  Triple("Cronograma","Monte uma visão de atividades por período.","◷")
+ )
+ for((index,m) in models.withIndex()){
+  val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=rounded(surfaceColor(),surfaceBorder(),18f);elevation=dp(1).toFloat()}
+  val preview=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=rounded(if(isDarkTheme)Color.rgb(16,28,21)else Color.rgb(246,249,247),surfaceBorder(),12f);setPadding(dp(7),dp(7),dp(7),dp(7))}
+  for(rowIndex in 0 until 4){
+   val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+   for(colIndex in 0 until 6){
+    val cell=View(this);val highlighted=(rowIndex==0&&colIndex==(index%4)+1)||(rowIndex==2&&colIndex==3)
+    cell.background=rounded(if(highlighted)if(isDarkTheme)Color.rgb(55,126,82)else Color.rgb(195,232,207)else if((rowIndex+colIndex)%3==0)if(isDarkTheme)Color.rgb(35,54,43)else Color.rgb(225,235,228)else if(isDarkTheme)Color.rgb(25,39,31)else Color.WHITE,surfaceBorder(),2f)
+    row.addView(cell,LinearLayout.LayoutParams(0,dp(14),1f).apply{setMargins(dp(2),dp(2),dp(2),dp(2))})
+   }
+   preview.addView(row,LinearLayout.LayoutParams(-1,dp(18)))
+  }
+  card.addView(preview,LinearLayout.LayoutParams(-1,dp(82)))
+  val title=textView(m.first,16f,inkColor());title.typeface=Typeface.DEFAULT_BOLD;card.addView(title,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
+  card.addView(textView(m.second,12.5f,mutedColor()),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
+  val use=actionButton("Usar modelo");card.addView(use,LinearLayout.LayoutParams(-1,dp(46)).apply{topMargin=dp(12)});use.setOnClickListener{newDocument()}
+  it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+ }
+}}
  private fun actionCard(title:String,sub:String,icon:String,action:()->Unit):View{
  val b=LinearLayout(this);b.gravity=Gravity.CENTER_VERTICAL;b.setPadding(dp(14),dp(12),dp(12),dp(12));b.background=rounded(surfaceColor(),surfaceBorder(),17f);b.elevation=dp(1).toFloat()
  val ic=ImageView(this);ic.setImageResource(iconRes(icon));ic.setColorFilter(Color.rgb(19,122,84));ic.scaleType=ImageView.ScaleType.CENTER_INSIDE;b.addView(ic,LinearLayout.LayoutParams(dp(44),dp(44)).apply{rightMargin=dp(12)})

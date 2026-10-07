@@ -647,7 +647,7 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
     "Dados"->{action("Ordenar","Intervalo"){showNexaToast("Ordenação disponível no menu Dados",NexaToastType.INFO)};action("Filtrar","Dados"){showNexaToast("Filtro de dados disponível no menu Dados",NexaToastType.INFO)};action("Agrupar linha","Linhas"){groupRow()};action("Agrupar coluna","Colunas"){groupCol()};action("Grupos +/-","Expandir"){toggleGroups()};action("Mesclar","Células"){merge()};action("Desmesclar","Células"){unmerge()}}
     "Exibir"->{action("Zoom +","Ampliar"){grid.zoom*=1.15f;grid.invalidate()};action("Zoom -","Reduzir"){grid.zoom=maxOf(.55f,grid.zoom/1.15f);grid.invalidate()};action("Congelar","Painéis"){freeze()};action("Ocultar","Linhas/colunas"){hide()};action("Mostrar","Linhas/colunas"){show()}}
     "Arquivo"->{action("Salvar","Nexa"){save()};action("Exportar","CSV/TSV/Nexa"){exportFile()};action("Copiar","Seleção"){copy()};action("Colar","Área de transferência"){paste()};action("Atualizar","Sincronizar"){phase2()};action("Sair","Sessão"){getPreferences(0).edit().clear().apply();token=null;login()}}
-  }}
+  }}}
   listOf("Início","Inserir","Formatar","Dados","Exibir","Arquivo").forEach{category(it)}
   (categories.getChildAt(0) as View).performClick()
   root.addView(page)

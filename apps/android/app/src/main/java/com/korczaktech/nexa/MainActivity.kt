@@ -415,7 +415,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    view.findViewById<View>(R.id.navHome).setOnClickListener{home()}
    view.findViewById<View>(R.id.navFiles).setOnClickListener{filesPage()}
    view.findViewById<View>(R.id.btnCreate).setOnClickListener{newDocument()}
-   view.findViewById<View>(R.id.navTemplates).setOnClickListener{phase2Templates()}
+   view.findViewById<View>(R.id.navTemplates).setOnClickListener{templatesPage()}
    view.findViewById<View>(R.id.navMore).setOnClickListener{morePage()}
    val green=Color.rgb(19,122,84);val muted=Color.rgb(91,106,98)
    view.findViewById<View>(R.id.pillHome).visibility=View.VISIBLE
@@ -509,15 +509,53 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
  private fun recentPage(){simplePage("Atividade recente","Um resumo do que aconteceu no Nexa"){it.addView(activityRow("Nexa iniciado","Agora","Sistema"));it.addView(activityRow("Área de trabalho aberta","Agora","Nexa"));it.addView(activityRow("Última planilha acessada","Recentemente",book?.name?:"Nova planilha"));it.addView(infoCard("Sincronização","A sincronização pode ser iniciada pela área Mais quando houver uma sessão ativa."))}}
  private fun trashPage(){simplePage("Lixeira","Documentos removidos ficam separados dos arquivos ativos"){it.addView(infoCard("A lixeira está vazia","Nenhum documento foi enviado para a lixeira nesta sessão."));it.addView(actionCard("Esvaziar lixeira","Excluir permanentemente os itens da lixeira","⌫"){showNexaToast("A lixeira já está vazia",NexaToastType.INFO)})}}
  private fun addFilePage(){simplePage("Adicionar arquivo","Importe documentos do seu dispositivo"){it.addView(actionCard("Escolher arquivo","Abrir o seletor de arquivos do Android","＋"){val intent=Intent(Intent.ACTION_OPEN_DOCUMENT).apply{type="*/*";putExtra(Intent.EXTRA_ALLOW_MULTIPLE,false);addCategory(Intent.CATEGORY_OPENABLE)};startActivityForResult(intent,PICK)});it.addView(infoCard("Formatos","Escolha uma planilha ou documento compatível. O arquivo selecionado será preparado para uso no Nexa."))}}
- private fun profilePage(){simplePage("Meu perfil","Sua conta e suas informações"){it.addView(profileHero());it.addView(actionCard("Editar perfil","Atualize o nome exibido no Nexa","✎"){editProfile()});it.addView(actionCard("Meu plano","Confira seu plano e recursos","◇"){planPage()});it.addView(actionCard("Configurações","Preferências do aplicativo","⚙"){settingsPage()});it.addView(actionCard("Sair","Encerrar esta sessão neste aparelho","⇥"){logout()})}}
- private fun editProfile(){val input=dialogInput("Seu nome");input.setText(profileName);nexaBuilder().setTitle("Editar perfil").setView(input).setNegativeButton("Cancelar",null).setPositiveButton("Salvar"){_,_->profileName=input.text.toString().trim().ifBlank{"Meu perfil"};getPreferences(0).edit().putString("profileName",profileName).apply();profilePage()}.show()}
- private fun planPage(){simplePage("Meu plano","Seu acesso ao Korczak Nexa"){val card=LinearLayout(this);card.orientation=LinearLayout.VERTICAL;card.setPadding(dp(20),dp(20),dp(20),dp(20));card.background=rounded(if(isDarkTheme)Color.rgb(23,44,32)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),24f);card.addView(textView("FREE",30f,inkColor()));card.addView(textView("Plano atual",13f,Color.rgb(155,210,172)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)});card.addView(textView("Recursos essenciais para começar a organizar suas planilhas.",14f,Color.rgb(210,238,218)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(14)});it.addView(card,LinearLayout.LayoutParams(-1,dp(170)).apply{bottomMargin=dp(16)});it.addView(infoCard("Plano gratuito","O Nexa está disponível para você começar sem cobrança."));it.addView(actionCard("Atualizações","Verifique se existe uma versão mais recente","↻"){checkForUpdate()})}}
- private fun settingsPage(){simplePage("Configurações","Personalize a experiência do Nexa"){it.addView(settingRow("Atualizações automáticas","O Nexa verifica novas versões ao iniciar",true))
- val themeRow=settingRow("Tema escuro","Alternar entre tema claro e tema escuro",isDarkTheme)
- val themeSwitch=(themeRow as ViewGroup).getChildAt(2) as Switch;val applyTheme={checked:Boolean->isDarkTheme=checked;getPreferences(0).edit().putBoolean("darkTheme",checked).apply();applySystemTheme();root.post{settingsPage()}};themeSwitch.setOnCheckedChangeListener{_,checked->if(checked!=isDarkTheme)applyTheme(checked)};themeRow.setOnClickListener{if(themeSwitch.isEnabled){themeSwitch.isChecked=!themeSwitch.isChecked}}
- it.addView(themeRow)
- it.addView(settingRow("Confirmações","Peça confirmação antes de ações importantes",true));it.addView(actionCard("Atualizações","Ver versão instalada e procurar novidades","↻"){updatesPage()});it.addView(actionCard("Dar feedback","Conte como podemos melhorar","♡"){feedbackPage()})}}
- private fun updatesPage(){simplePage("Atualizações","Versão instalada e novidades"){it.addView(infoCard("Nexa "+APP_VERSION,"Código da versão: "+APP_VERSION_CODE));it.addView(actionCard("Procurar atualização","Consultar a versão oficial mais recente","↻"){checkForUpdate();showNexaToast("Verificando atualizações…",NexaToastType.SELECTION)});it.addView(infoCard("Atualizador","As versões oficiais são distribuídas pelo GitHub Releases."))}}
+ private fun profilePage(){simplePage("Meu perfil","Gerencie seus dados e preferências da conta"){
+ it.addView(profileHero())
+ val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(8));background=rounded(surfaceColor(),surfaceBorder(),18f)}
+ val name=dialogInput("Nome exibido");name.setText(profileName)
+ val email=dialogInput("E-mail");email.setText(getPreferences(0).getString("email","Conta Nexa")?:"Conta Nexa");email.isEnabled=false
+ val city=dialogInput("Cidade");city.setText(getPreferences(0).getString("profileCity",""))
+ val country=dialogInput("País");country.setText(getPreferences(0).getString("profileCountry",""))
+ fun addField(label:String,e:EditText){card.addView(textView(label,12f,mutedColor()),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)});card.addView(e,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(4);bottomMargin=dp(8)})}
+ addField("Nome",name);addField("E-mail",email);addField("Cidade",city);addField("País",country)
+ val save=actionButton("Salvar alterações");card.addView(save,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(6),bottomMargin=dp(8)})
+ save.setOnClickListener{profileName=name.text.toString().trim().ifBlank{"Meu perfil"};getPreferences(0).edit().putString("profileName",profileName).putString("profileCity",city.text.toString().trim()).putString("profileCountry",country.text.toString().trim()).apply();showNexaToast("Perfil atualizado",NexaToastType.SUCCESS);profilePage()}
+ it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
+ it.addView(actionCard("Meu plano","Consultar plano e recursos","◇"){planPage()})
+ it.addView(actionCard("Configurações","Preferências do aplicativo","⚙"){settingsPage()})
+ it.addView(actionCard("Sair","Encerrar esta sessão neste aparelho","⇥"){logout()})
+}}
+ private fun editProfile(){profilePage()}
+ private fun planPage(){simplePage("Meu plano","Escolha e acompanhe o plano do Nexa"){
+ val selected=getPreferences(0).getString("planId","free")?:"free"
+ val plans=listOf(
+  Triple("free","Free","Recursos essenciais para começar."),
+  Triple("starter","Starter","Mais espaço e recursos para uso pessoal."),
+  Triple("pro","Pro","Recursos avançados para produtividade."),
+  Triple("business","Business","Colaboração e recursos para equipes."),
+  Triple("enterprise","Enterprise","Recursos completos para organizações.")
+ )
+ it.addView(infoCard("Plano atual",plans.first{it.first==selected}.second+" • "+plans.first{it.first==selected}.third))
+ for((id,name,desc) in plans){
+  val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(14),dp(16),dp(14));background=rounded(if(id==selected)if(isDarkTheme)Color.rgb(23,55,36)else Color.rgb(239,249,243)else surfaceColor(),if(id==selected)if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(31,151,91)else surfaceBorder(),18f)}
+  val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
+  val title=textView(name,18f,inkColor());title.typeface=Typeface.DEFAULT_BOLD;row.addView(title,LinearLayout.LayoutParams(0,-2,1f))
+  if(id==selected)row.addView(textView("ATUAL",10f,if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(19,122,84)))
+  card.addView(row);card.addView(textView(desc,13f,mutedColor()),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+  val choose=actionButton(if(id==selected)"Plano atual" else "Selecionar plano");choose.isEnabled=id!=selected;card.addView(choose,LinearLayout.LayoutParams(-1,dp(44)).apply{topMargin=dp(11)});choose.setOnClickListener{getPreferences(0).edit().putString("planId",id).apply();showNexaToast("Plano $name selecionado",NexaToastType.SUCCESS);planPage()}
+  it.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+ }
+}}
+ private fun settingsPage(){simplePage("Configurações","Personalize a experiência do Nexa"){
+ val auto=getPreferences(0).getBoolean("autoUpdates",true)
+ val autoRow=settingRow("Atualizações automáticas","Verificar novas versões ao iniciar",auto);val autoSwitch=(autoRow as ViewGroup).getChildAt(2) as Switch;autoSwitch.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean("autoUpdates",v).apply()};autoRow.setOnClickListener{autoSwitch.isChecked=!autoSwitch.isChecked};it.addView(autoRow)
+ val themeRow=settingRow("Tema escuro","Alternar entre tema claro e tema escuro",isDarkTheme);val themeSwitch=(themeRow as ViewGroup).getChildAt(2) as Switch;val applyTheme={checked:Boolean->isDarkTheme=checked;getPreferences(0).edit().putBoolean("darkTheme",checked).apply();applySystemTheme();root.post{settingsPage()}};themeSwitch.setOnCheckedChangeListener{_,checked->if(checked!=isDarkTheme)applyTheme(checked)};themeRow.setOnClickListener{themeSwitch.isChecked=!themeSwitch.isChecked};it.addView(themeRow)
+ val confirm=getPreferences(0).getBoolean("confirmActions",true);val confirmRow=settingRow("Confirmações","Pedir confirmação antes de ações importantes",confirm);val confirmSwitch=(confirmRow as ViewGroup).getChildAt(2) as Switch;confirmSwitch.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean("confirmActions",v).apply()};confirmRow.setOnClickListener{confirmSwitch.isChecked=!confirmSwitch.isChecked};it.addView(confirmRow)
+ it.addView(actionCard("Idioma","Português (Brasil)","文"){showNexaToast("Idioma: Português (Brasil)",NexaToastType.SELECTION)})
+ it.addView(actionCard("Armazenamento","Gerenciar espaço e arquivos locais","▰"){storagePage()})
+ it.addView(actionCard("Atualizações","Versão instalada e novidades","↻"){updatesPage()})
+ it.addView(actionCard("Dar feedback","Conte como podemos melhorar","♡"){feedbackPage()})
+}}private fun updatesPage(){simplePage("Atualizações","Versão instalada e novidades"){it.addView(infoCard("Nexa "+APP_VERSION,"Código da versão: "+APP_VERSION_CODE));it.addView(actionCard("Procurar atualização","Consultar a versão oficial mais recente","↻"){checkForUpdate();showNexaToast("Verificando atualizações…",NexaToastType.SELECTION)});it.addView(infoCard("Atualizador","As versões oficiais são distribuídas pelo GitHub Releases."))}}
  private fun feedbackPage(){
  simplePage("Dar Feedback","Envie uma mensagem diretamente para a equipe do Nexa"){
   val intro=infoCard("Fale com a equipe","Seu feedback fica registrado no Nexa para análise da equipe. Escolha o tipo, dê um título e descreva o que aconteceu.")
@@ -564,7 +602,20 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
   it.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
  }
 }
-private fun aboutPage(){simplePage("Sobre o Nexa","Informações do produto, sessão e infraestrutura"){val hero=LinearLayout(this);hero.orientation=LinearLayout.VERTICAL;hero.gravity=Gravity.CENTER;hero.setPadding(dp(24),dp(24),dp(24),dp(24));hero.background=rounded(if(isDarkTheme)Color.rgb(23,44,32)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),24f);val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_login_logo);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;hero.addView(logo,LinearLayout.LayoutParams(dp(92),dp(92)));val t=textView("Korczak Nexa",25f,inkColor());t.typeface=Typeface.DEFAULT_BOLD;hero.addView(t);hero.addView(textView("Suas planilhas. Sua organização. Seu Nexa.",13f,if(isDarkTheme)Color.rgb(176,232,197)else Color.rgb(44,125,78)));hero.addView(textView("Versão "+APP_VERSION,12f,if(isDarkTheme)Color.rgb(137,207,161)else Color.rgb(65,139,91)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)});it.addView(hero,LinearLayout.LayoutParams(-1,dp(220)).apply{bottomMargin=dp(16)});it.addView(infoCard("Produto","O Korczak Nexa é o aplicativo nativo Android do Korczak HUB para criar, organizar, editar e sincronizar planilhas."));it.addView(infoCard("Aplicativo Android","Interface nativa em Kotlin/XML, sem navegador incorporado. Pacote: com.korczaktech.nexa. Android mínimo: 8.0 (API 26). Android alvo: API 35."));it.addView(infoCard("API","Backend conectado ao aplicativo: https://kz-nexa.onrender.com. A comunicação autenticada usa a sessão do usuário e endpoints protegidos do Nexa."));it.addView(infoCard("Sessão","Sua sessão de acesso é mantida localmente no aplicativo por um token de autenticação. O Nexa usa esse token para autenticar as operações da conta e pode validar a sessão pelo backend."));it.addView(infoCard("Armazenamento","Documentos, dados temporários e arquivos de atualização podem usar o armazenamento do aparelho. O aplicativo também sincroniza dados compatíveis com o backend quando necessário."));it.addView(infoCard("Atualizações","As versões oficiais do Android são distribuídas pelo GitHub Releases. O Nexa verifica novas versões e oferece a atualização pelo próprio aplicativo."));it.addView(infoCard("Distribuição e segurança","As versões de produção são assinadas com a chave permanente de produção do Nexa. O aplicativo solicita apenas as permissões necessárias para rede e atualização de APK."));it.addView(infoCard("Empresa","O Nexa faz parte do Korczak HUB, produto da Korczak Technologies."))}}
+private fun checkAboutStatus(updateView:TextView){updateView.text="Verificando…";Thread{var available=false;try{val url=URL("https://api.github.com/repos/korczaktech/kz-nexa/releases?per_page=30");val conn=url.openConnection() as HttpURLConnection;conn.connectTimeout=8000;conn.readTimeout=10000;conn.setRequestProperty("Accept","application/vnd.github+json");val code=conn.responseCode;if(code in 200..299){val arr=JSONArray(conn.inputStream.bufferedReader().use{it.readText()});for(i in 0 until arr.length()){val q=arr.getJSONObject(i);if(!q.optBoolean("draft")&&!q.optBoolean("prerelease")&&isNewer(q.optString("tag_name").removePrefix("v"),APP_VERSION)){available=true;break}}};conn.disconnect()}catch(_:Exception){};runOnUiThread{updateView.text=if(available)"Disponível" else "Indisponível"}}.start()}
+private fun aboutPage(){simplePage("Sobre o Nexa","Status do produto e informações públicas"){
+ val hero=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(20),dp(18),dp(20),dp(18));background=rounded(if(isDarkTheme)Color.rgb(23,44,32)else Color.WHITE,if(isDarkTheme)Color.rgb(52,91,68)else Color.rgb(208,228,216),22f)}
+ val logo=ImageView(this);logo.setImageResource(R.drawable.nexa_login_logo);logo.scaleType=ImageView.ScaleType.CENTER_INSIDE;hero.addView(logo,LinearLayout.LayoutParams(dp(72),dp(72)));val t=textView("Korczak Nexa",23f,inkColor());t.typeface=Typeface.DEFAULT_BOLD;hero.addView(t);hero.addView(textView("Seu espaço de produtividade.",13f,mutedColor()));it.addView(hero,LinearLayout.LayoutParams(-1,dp(160)).apply{bottomMargin=dp(14)})
+ val status=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),dp(12));background=rounded(surfaceColor(),surfaceBorder(),18f)}
+ fun statusRow(label:String,value:String):TextView{val row=LinearLayout(this@MainActivity).apply{gravity=Gravity.CENTER_VERTICAL};val l=textView(label,13f,mutedColor());row.addView(l,LinearLayout.LayoutParams(0,dp(38),1f));val v=textView(value,13f,inkColor());v.typeface=Typeface.DEFAULT_BOLD;v.gravity=Gravity.CENTER_VERTICAL or Gravity.RIGHT;row.addView(v,LinearLayout.LayoutParams(dp(170),dp(38)));status.addView(row);return v}
+ statusRow("API","NexaAPI");statusRow("Versão da API","v1.0.0");statusRow("Versão do Nexa",APP_VERSION);statusRow("Aplicativo Android","On-Line");statusRow("Aplicativo Desktop","Off-Line");statusRow("Versão Web/PWA","On-Line");statusRow("KZ HUB Integração","Off-Line");val updateStatus=statusRow("Atualizações","Verificando…");statusRow("Distribuição e Segurança","KZSecurity");statusRow("Sessão","Ativa")
+ it.addView(status,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
+ it.addView(actionCard("Verificar status","Atualizar disponibilidade da API e de novas versões","↻"){checkAboutStatus(updateStatus)})
+ it.addView(infoCard("Produto","O Korczak Nexa é o aplicativo Android do Korczak HUB para criar, organizar, editar e sincronizar planilhas."))
+ it.addView(infoCard("Compatibilidade","Aplicativo Android nativo. A versão desktop e a integração HUB permanecem independentes."))
+ it.addView(infoCard("Segurança","As versões oficiais são distribuídas com assinatura de produção e o aplicativo solicita apenas permissões necessárias."))
+ checkAboutStatus(updateStatus)
+}}
  private fun morePage(){simplePage("Mais","Tudo o que não precisa ficar na navegação principal"){it.addView(actionCard("Meu perfil","Conta, nome e informações pessoais","✎"){profilePage()});it.addView(actionCard("Meu plano","Veja seu plano e recursos","◇"){planPage()});it.addView(actionCard("Configurações","Preferências do Nexa","⚙"){settingsPage()});it.addView(actionCard("Sobre o Nexa","Versão, produto e informações","ⓘ"){aboutPage()});it.addView(actionCard("Atualizações","Confira novas versões","↻"){updatesPage()});it.addView(actionCard("Dar Feedback","Envie uma sugestão para a equipe","♡"){feedbackPage()});it.addView(actionCard("Sair","Encerrar sessão","⇥"){logout()})}}
  private fun simplePage(title:String,subtitle:String,build:(LinearLayout)->Unit){
  val target=PageTarget{renderSimplePage(title,subtitle,build)}

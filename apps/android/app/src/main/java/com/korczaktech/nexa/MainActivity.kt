@@ -161,7 +161,7 @@ class MainActivity:Activity(){ // stable startup path
     runOnUiThread{
      try{
       val file=target ?: throw IOException("Arquivo da atualização não encontrado")
-      val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"\${packageName}.fileprovider",file)
+      val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"${BuildConfig.APPLICATION_ID}.fileprovider",file)
       if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
        pendingInstallUri=uri
        AlertDialog.Builder(this@MainActivity)

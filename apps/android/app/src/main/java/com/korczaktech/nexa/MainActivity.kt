@@ -20,14 +20,14 @@ class MainActivity:Activity(){ // stable startup path
  private fun confirmExitApp(){AlertDialog.Builder(this).setTitle("Sair do Nexa?").setMessage("Tem certeza que deseja sair do aplicativo?").setNegativeButton("Cancelar",null).setPositiveButton("Sair"){_,_->finishAndRemoveTask()}.show()}
  private fun pageBack(){handleBackNavigation()}
  override fun onCreate(b:Bundle?){installSplashScreen();super.onCreate(b);window.setBackgroundDrawableResource(android.R.color.transparent);isDarkTheme=getPreferences(0).getBoolean("darkTheme",false);applySystemTheme();root=FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,5));setContentView(root);if(android.os.Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT){handleBackNavigation()};appReady=true;token=getPreferences(0).getString("token",null);uid=getPreferences(0).getString("uid","")?:"";profileName=getPreferences(0).getString("profileName","Meu perfil")?:"Meu perfil";if(token==null)login()else load();android.os.Handler(mainLooper).postDelayed({checkForUpdate()},5000)}
- override fun onResume(){super.onResume();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized){android.os.Handler(mainLooper).postDelayed({finishPendingInstallIfPossible()},250);android.os.Handler(mainLooper).postDelayed({checkForUpdate()},550)}}
+ override fun onResume(){super.onResume();applySystemTheme();window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.attributes=window.attributes.apply{alpha=1f};window.decorView.alpha=1f;if(appReady&&::root.isInitialized){android.os.Handler(mainLooper).postDelayed({finishPendingInstallIfPossible()},250);android.os.Handler(mainLooper).postDelayed({checkForUpdate()},550)}}
  private fun finishPendingInstallIfPossible(){val uri=pendingInstallUri?:return;if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls())return;pendingInstallUri=null;launchApkInstaller(uri)}
  private var updateCheckRunning=false
  private var updateDialogShowing=false
  private var pendingInstallUri:Uri?=null
  private val updateHandler=Handler(Looper.getMainLooper())
 
- private fun applySystemTheme(){val bg=if(isDarkTheme)Color.rgb(8,14,11)else Color.rgb(245,247,244);val nav=if(isDarkTheme)Color.rgb(12,20,16)else Color.WHITE;window.statusBarColor=bg;window.navigationBarColor=nav}
+ private fun applySystemTheme(){val bg=if(isDarkTheme)Color.rgb(8,14,11)else Color.rgb(245,247,244);val nav=if(isDarkTheme)Color.rgb(12,20,16)else Color.WHITE;window.statusBarColor=bg;window.navigationBarColor=nav;window.decorView.systemUiVisibility=if(isDarkTheme)0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR}
  private fun pageBg()=if(isDarkTheme)Color.rgb(12,20,16)else Color.rgb(248,250,248)
  private fun surfaceColor()=if(isDarkTheme)Color.rgb(22,31,26)else Color.WHITE
  private fun surfaceBorder()=if(isDarkTheme)Color.rgb(49,67,57)else Color.rgb(225,233,228)
@@ -529,7 +529,7 @@ private fun aboutPage(){simplePage("Sobre o Nexa","Informações do produto, ses
  private fun morePage(){simplePage("Mais","Tudo o que não precisa ficar na navegação principal"){it.addView(actionCard("Meu perfil","Conta, nome e informações pessoais","✎"){profilePage()});it.addView(actionCard("Meu plano","Veja seu plano e recursos","◇"){planPage()});it.addView(actionCard("Configurações","Preferências do Nexa","⚙"){settingsPage()});it.addView(actionCard("Sobre o Nexa","Versão, produto e informações","ⓘ"){aboutPage()});it.addView(actionCard("Atualizações","Confira novas versões","↻"){updatesPage()});it.addView(actionCard("Dar Feedback","Envie uma sugestão para a equipe","♡"){feedbackPage()});it.addView(actionCard("Sair","Encerrar sessão","⇥"){logout()})}}
  private fun simplePage(title:String,subtitle:String,build:(LinearLayout)->Unit){
  val target=PageTarget{renderSimplePage(title,subtitle,build)}
- if(!restoringPage){currentPageTarget?.let{pageHistory.addLast(it);if(pageHistory.size>30)pageHistory.removeFirst()}}
+ if(!restoringPage){pageHistory.addLast(currentPageTarget?:PageTarget(null));if(pageHistory.size>30)pageHistory.removeFirst()}
  currentPageTarget=target
  renderSimplePage(title,subtitle,build)
 }

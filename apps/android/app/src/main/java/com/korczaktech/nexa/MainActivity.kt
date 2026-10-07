@@ -886,23 +886,106 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
  private fun req(path:String,method:String,body:String?,auth:String?):Pair<Int,String>{val c=URL(API+path).openConnection() as HttpURLConnection;c.requestMethod=method;c.connectTimeout=10000;c.readTimeout=15000;if(auth!=null)c.setRequestProperty("Authorization","Bearer "+auth);c.setRequestProperty("Content-Type","application/json");if(body!=null){c.doOutput=true;c.outputStream.use{it.write(body.toByteArray())}};val code=c.responseCode;val i=if(code>=400)c.errorStream else c.inputStream;return code to i.bufferedReader().use{it.readText()}}
  inner class Grid:View(this){var zoom=1f;var panX=0f;var panY=0f;var selStart=0;var selEnd=0;var selColStart=0;var selColEnd=0;val cw=130f;val rh=52f;val head=48f;val p=Paint(1)
    override fun onDraw(c:Canvas){
-    val s=book!!.sheets[book!!.active];c.save();c.scale(zoom,zoom);p.textSize=14f
-    fun visible(r:Int,k:Int):Boolean{val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;val y=head+r*rh-if(r>=s.frozenRows)panY else 0f;return x+cw>=head&&x<=width/zoom&&y+rh>=head&&y<=height/zoom}
-    for(r in 0 until 200)for(k in 0 until 50){
-     if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
-     val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;val y=head+r*rh-if(r>=s.frozenRows)panY else 0f
-     val ce=s.cells[key(r,k)];p.color=if(r in selStart..selEnd&&k in selColStart..selColEnd)Color.rgb(220,245,230)else Color.WHITE;c.drawRect(x,y,x+cw,y+rh,p)
-     p.style=Paint.Style.STROKE;p.color=Color.LTGRAY;c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.FILL
-     if(ce!=null){val rule=s.rules.firstOrNull{ruleMatch(ce.input,key(r,k),it)};p.color=rule?.bg?:ce.background;c.drawRect(x+1,y+1,x+cw-1,y+rh-1,p)
-      p.color=rule?.fg?:ce.fontColor;p.textSize=ce.fontSize;p.typeface=if(ce.bold&&ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.BOLD_ITALIC)else if(ce.bold)Typeface.DEFAULT_BOLD else if(ce.italic)Typeface.create(Typeface.DEFAULT,Typeface.ITALIC)else Typeface.DEFAULT
-      val tx=formatValue(showValue(ce.input,s),ce.numberFormat);val tw=p.measureText(tx);val txp=if(ce.align==1)x+(cw-tw)/2 else if(ce.align==2)x+cw-tw-7 else x+7;c.drawText(tx,txp,y+32,p);p.typeface=Typeface.DEFAULT
-      if(ce.borderTop){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x+cw,y,p);p.style=Paint.Style.FILL};if(ce.borderRight){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x+cw,y,x+cw,y+rh,p);p.style=Paint.Style.FILL};if(ce.borderBottom){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y+rh,x+cw,y+rh,p);p.style=Paint.Style.FILL};if(ce.borderLeft){p.style=Paint.Style.STROKE;p.color=Color.DKGRAY;c.drawLine(x,y,x,y+rh,p);p.style=Paint.Style.FILL}
-     }
+    val s=book!!.sheets[book!!.active]
+    c.save()
+    c.scale(zoom,zoom)
+    val dark=isDarkTheme
+    val bg=if(dark)Color.rgb(10,16,13)else Color.rgb(248,250,249)
+    val surface=if(dark)Color.rgb(20,29,24)else Color.WHITE
+    val header=if(dark)Color.rgb(25,38,31)else Color.rgb(241,246,243)
+    val headerStrong=if(dark)Color.rgb(30,48,38)else Color.rgb(232,240,235)
+    val gridLine=if(dark)Color.rgb(48,65,55)else Color.rgb(218,226,221)
+    val ink=if(dark)Color.rgb(235,246,239)else Color.rgb(35,48,41)
+    val muted=if(dark)Color.rgb(150,172,158)else Color.rgb(101,116,108)
+    val selectFill=if(dark)Color.rgb(25,65,44)else Color.rgb(226,244,234)
+    val activeFill=if(dark)Color.rgb(34,91,60)else Color.rgb(213,239,223)
+    val accent=if(dark)Color.rgb(82,232,139)else Color.rgb(19,122,84)
+    c.drawColor(bg)
+    p.style=Paint.Style.FILL
+    fun visible(r:Int,k:Int):Boolean{
+      val x=head+k*cw-if(k>=s.frozenCols)panX else 0f
+      val y=head+r*rh-if(r>=s.frozenRows)panY else 0f
+      return x+cw>=head&&x<=width/zoom&&y+rh>=head&&y<=height/zoom
     }
-    p.color=Color.rgb(240,240,240);c.drawRect(0f,0f,width.toFloat(),head,p);var hx=head
-    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){val x=head+k*cw-if(k>=s.frozenCols)panX else 0f;if(x+cw>=head&&x<=width/zoom){p.color=Color.DKGRAY;p.textSize=14f;c.drawText(col(k),x+8,30f,p)}}
-    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){val y=head+r*rh-if(r>=s.frozenRows)panY else 0f;if(y+rh>=head&&y<=height/zoom){p.color=Color.DKGRAY;p.textSize=14f;c.drawText((r+1).toString(),8f,y+32,p)}}
-    p.color=Color.rgb(14,28,21);c.drawRect(0f,0f,head,head,p);c.restore()
+    fun cellX(k:Int)=head+k*cw-if(k>=s.frozenCols)panX else 0f
+    fun cellY(r:Int)=head+r*rh-if(r>=s.frozenRows)panY else 0f
+    for(r in 0 until 200)for(k in 0 until 50){
+      if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
+      val x=cellX(k);val y=cellY(r)
+      val selected=r in selStart..selEnd&&k in selColStart..selColEnd
+      val active=r==selStart&&k==selColStart
+      val ce=s.cells[key(r,k)]
+      val base=if(r%2==1&&ce==null)if(dark)Color.rgb(18,27,22)else Color.rgb(250,252,251)else surface
+      p.style=Paint.Style.FILL
+      p.color=if(selected)selectFill else base
+      c.drawRect(x,y,x+cw,y+rh,p)
+      if(ce!=null){
+        val rule=s.rules.firstOrNull{ruleMatch(ce.input,key(r,k),it)}
+        p.color=if(selected)selectFill else (rule?.bg?:ce.background)
+        c.drawRect(x+1,y+1,x+cw-1,y+rh-1,p)
+        p.color=rule?.fg?:ce.fontColor
+        p.textSize=ce.fontSize.coerceIn(10f,28f)
+        p.typeface=when{
+          ce.bold&&ce.italic->Typeface.create(Typeface.DEFAULT,Typeface.BOLD_ITALIC)
+          ce.bold->Typeface.DEFAULT_BOLD
+          ce.italic->Typeface.create(Typeface.DEFAULT,Typeface.ITALIC)
+          else->Typeface.DEFAULT
+        }
+        val tx=formatValue(showValue(ce.input,s),ce.numberFormat)
+        val tw=p.measureText(tx)
+        val txp=when(ce.align){1->x+(cw-tw)/2f;2->x+cw-tw-dp(8);else->x+dp(8)}
+        val ty=y+rh/2f-(p.ascent()+p.descent())/2f
+        if(ce.wrap&&tw>cw-dp(16)){p.textSize=(ce.fontSize-1f).coerceAtLeast(9f)}
+        c.drawText(tx,txp,ty,p)
+        if(ce.underline||ce.strike){
+          p.style=Paint.Style.STROKE;p.strokeWidth=1.2f
+          val ly=if(ce.strike)ty-p.textSize*0.32f else ty+1f
+          c.drawLine(txp,ly,minOf(txp+p.measureText(tx),x+cw-dp(5)),ly,p)
+          p.style=Paint.Style.FILL
+        }
+        if(ce.borderTop||ce.borderRight||ce.borderBottom||ce.borderLeft){
+          p.style=Paint.Style.STROKE;p.strokeWidth=1.5f;p.color=if(dark)Color.rgb(92,145,112)else Color.rgb(74,125,94)
+          if(ce.borderTop)c.drawLine(x,y,x+cw,y,p)
+          if(ce.borderRight)c.drawLine(x+cw,y,x+cw,y+rh,p)
+          if(ce.borderBottom)c.drawLine(x,y+rh,x+cw,y+rh,p)
+          if(ce.borderLeft)c.drawLine(x,y,x,y+rh,p)
+          p.style=Paint.Style.FILL
+        }
+      }
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,y,x+cw,y+rh,p);p.style=Paint.Style.FILL
+      if(active){
+        p.style=Paint.Style.STROKE;p.strokeWidth=2.5f;p.color=accent;c.drawRect(x+1.5f,y+1.5f,x+cw-1.5f,y+rh-1.5f,p)
+        p.style=Paint.Style.FILL;p.color=accent;c.drawCircle(x+cw-3f,y+rh-3f,4f,p)
+      }else if(selected){
+        p.style=Paint.Style.STROKE;p.strokeWidth=1.8f;p.color=accent;c.drawRect(x+1f,y+1f,x+cw-1f,y+rh-1f,p);p.style=Paint.Style.FILL
+      }
+    }
+    // Coluna/linha headers ficam fora da grade e acompanham a seleção.
+    p.style=Paint.Style.FILL;p.color=header;c.drawRect(0f,0f,width/zoom,head,p);c.drawRect(0f,head,head,height/zoom,p)
+    for(k in 0 until 50)if(!s.hiddenCols.contains(k)){
+      val x=cellX(k);if(x+cw<head||x>width/zoom)continue
+      val selected=k in selColStart..selColEnd
+      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(x,0f,x+cw,head,p)
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(x,0f,x+cw,head,p);p.style=Paint.Style.FILL
+      p.color=if(selected)accent else muted;p.textSize=13f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+      val label=col(k);val tw=p.measureText(label);c.drawText(label,x+(cw-tw)/2f,head/2f-(p.ascent()+p.descent())/2f,p)
+    }
+    for(r in 0 until 200)if(!s.hiddenRows.contains(r)){
+      val y=cellY(r);if(y+rh<head||y>height/zoom)continue
+      val selected=r in selStart..selEnd
+      p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(0f,y,head,y+rh,p)
+      p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(0f,y,head,y+rh,p);p.style=Paint.Style.FILL
+      p.color=if(selected)accent else muted;p.textSize=12.5f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+      val label=(r+1).toString();val tw=p.measureText(label);c.drawText(label,head-dp(9)-tw,y+rh/2f-(p.ascent()+p.descent())/2f,p)
+    }
+    // Canto superior esquerdo.
+    p.style=Paint.Style.FILL;p.color=if(dark)Color.rgb(16,25,20)else Color.rgb(232,239,235);c.drawRect(0f,0f,head,head,p)
+    p.style=Paint.Style.STROKE;p.strokeWidth=1f;p.color=gridLine;c.drawRect(0f,0f,head,head,p)
+    p.style=Paint.Style.FILL;p.color=accent;c.drawCircle(head/2f,head/2f,5f,p)
+    // Sombras discretas de painéis congelados.
+    if(s.frozenCols>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head+s.frozenCols*cw-3f,head,head+s.frozenCols*cw+3f,height/zoom,p)}
+    if(s.frozenRows>0){p.color=Color.argb(if(dark)70 else 35,0,0,0);c.drawRect(head,head+s.frozenRows*rh-3f,width/zoom,head+s.frozenRows*rh+3f,p)}
+    c.restore()
    }
    private fun ruleMatch(v:String,k:String,r:Rule):Boolean{
     if(!keyInRange(k,r.range))return false

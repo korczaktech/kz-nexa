@@ -812,7 +812,14 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
  private fun undo(){if(history.isEmpty())return;future.addFirst(toJson(book!!).toString());book=from(JSONObject(history.removeLast()));grid.invalidate()}
  private fun redo(){if(future.isEmpty())return;history.addLast(toJson(book!!).toString());book=from(JSONObject(future.removeFirst()));grid.invalidate()}
  private fun addSheet(){snap();book!!.sheets.add(Sheet(name="Planilha "+(book!!.sheets.size+1)));book!!.active=book!!.sheets.lastIndex;grid.invalidate()}
- private fun edit(r:Int,c:Int){val s=book!!.sheets[book!!.active];val k=key(r,c);val ce=s.cells[k]?:Cell();val input=dialogInput();input.setText(ce.input);input.selectAll();nexaBuilder().setTitle(col(c)+(r+1)).setView(input).setPositiveButton("OK"){_,_->val vv=input.text.toString();if(!valid(vv,s.validations[k])){showNexaToast("Valor inválido",NexaToastType.INPUT);return@setPositiveButton};snap();if(vv.isEmpty())s.cells.remove(k)else{ce.input=vv;s.cells[k]=ce};grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
+ private fun edit(r:Int,c:Int){
+ grid.selStart=r;grid.selEnd=r;grid.selColStart=c;grid.selColEnd=c
+ syncFormulaEditor()
+ formulaEditor?.requestFocus()
+ formulaEditor?.selectAll()
+ (getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(formulaEditor,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+ grid.invalidate()
+}
  private fun toggle(t:String){snap();val s=book!!.sheets[book!!.active];for(r in grid.selStart..grid.selEnd)for(k in grid.selColStart..grid.selColEnd){val ce=s.cells[key(r,k)]?:Cell();if(t=="b")ce.bold=!ce.bold;if(t=="i")ce.italic=!ce.italic;if(t=="u")ce.underline=!ce.underline;if(t=="s")ce.strike=!ce.strike;s.cells[key(r,k)]=ce};grid.invalidate()}
  private fun align(a:Int){snap();val s=book!!.sheets[book!!.active];for(r in grid.selStart..grid.selEnd)for(k in grid.selColStart..grid.selColEnd){val ce=s.cells[key(r,k)]?:Cell();ce.align=a;s.cells[key(r,k)]=ce};grid.invalidate()}
  private fun fontSize(){val input=dialogInput();input.inputType=2;input.setText("14");nexaBuilder().setTitle("Tamanho da fonte").setView(input).setPositiveButton("Aplicar"){_,_->val n=input.text.toString().toFloatOrNull()?:14f;snap();val s=book!!.sheets[book!!.active];for(r in grid.selStart..grid.selEnd)for(k in grid.selColStart..grid.selColEnd){val ce=s.cells[key(r,k)]?:Cell();ce.fontSize=n.coerceIn(8f,72f);s.cells[key(r,k)]=ce};grid.invalidate()}.setNegativeButton("Cancelar",null).show()}
@@ -975,8 +982,16 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
     private fun cellPoint(k:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(k.trim())?:throw Exception("ref");var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
    }
   private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
-  private var lastX=0f;private var lastY=0f;private var panning=false
-  override fun onTouchEvent(e:MotionEvent):Boolean{val x=e.x/zoom;val y=e.y/zoom;when(e.action){MotionEvent.ACTION_DOWN->{lastX=x;lastY=y;panning=false;selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true};MotionEvent.ACTION_MOVE->{if(e.pointerCount>=2){panning=true;panX=(panX-(x-lastX)).coerceAtLeast(0f);panY=(panY-(y-lastY)).coerceAtLeast(0f);lastX=x;lastY=y;invalidate();return true};selEnd=locR(y);selColEnd=locC(x);invalidate();return true};MotionEvent.ACTION_UP->{if(!panning&&y>=head)edit(selStart,selColStart);return true}};return true}
+  private var lastX=0f;private var lastY=0f;private var panning=false;private var lastTapAt=0L;private var lastTapRow=-1;private var lastTapCol=-1
+  override fun onTouchEvent(e:MotionEvent):Boolean{
+   val x=e.x/zoom;val y=e.y/zoom
+   when(e.action){
+    MotionEvent.ACTION_DOWN->{lastX=x;lastY=y;panning=false;selStart=locR(y);selEnd=selStart;selColStart=locC(x);selColEnd=selColStart;invalidate();return true}
+    MotionEvent.ACTION_MOVE->{if(e.pointerCount>=2){panning=true;panX=(panX-(x-lastX)).coerceAtLeast(0f);panY=(panY-(y-lastY)).coerceAtLeast(0f);lastX=x;lastY=y;invalidate();return true};selEnd=locR(y);selColEnd=locC(x);invalidate();return true}
+    MotionEvent.ACTION_UP->{if(!panning&&y>=head){val now=System.currentTimeMillis();val row=selStart;val col=selColStart;val doubleTap=now-lastTapAt<350L&&row==lastTapRow&&col==lastTapCol;lastTapAt=now;lastTapRow=row;lastTapCol=col;syncFormulaEditor();if(doubleTap)edit(row,col)};return true}
+   }
+   return true
+  }
   private fun locR(y:Float):Int{val s=book!!.sheets[book!!.active];val logical=if(y<head+s.frozenRows*rh)y-head else y-head+panY;return (logical/rh).toInt().coerceIn(0,199)}
   private fun locC(x:Float):Int{val s=book!!.sheets[book!!.active];val logical=if(x<head+s.frozenCols*cw)x-head else x-head+panX;return (logical/cw).toInt().coerceIn(0,49)}
  }

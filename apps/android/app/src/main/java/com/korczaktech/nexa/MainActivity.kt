@@ -182,24 +182,33 @@ class MainActivity:Activity(){ // stable startup path
   }.start()
  }
  private fun launchApkInstaller(uri:Uri){
+  val grantFlags=Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_CLEAR_TOP
   try{
-   val flags=Intent.FLAG_GRANT_READ_URI_PERMISSION
    val install=Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
-    data=uri;type="application/vnd.android.package-archive";addFlags(flags)
+    setDataAndType(uri,"application/vnd.android.package-archive")
+    addFlags(grantFlags)
     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
    }
-   if(packageManager.queryIntentActivities(install,0).isNotEmpty()){startActivity(install);return}
-  }catch(_:Exception){}
+   startActivity(install)
+   return
+  }catch(_:ActivityNotFoundException){}
+   catch(_:SecurityException){}
+   catch(_:Exception){}
   try{
    val view=Intent(Intent.ACTION_VIEW).apply{
-    data=uri;type="application/vnd.android.package-archive"
-    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    setDataAndType(uri,"application/vnd.android.package-archive")
+    addFlags(grantFlags)
     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
    }
-   if(packageManager.queryIntentActivities(view,0).isNotEmpty())startActivity(view)
-   else showUpdateToast("Não há um instalador de APK disponível no Android.",true)
-  }catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
+   startActivity(view)
+  }catch(_:ActivityNotFoundException){
+   showUpdateToast("O Android não encontrou o instalador de APK.",true)
+  }catch(_:SecurityException){
+   showUpdateToast("O Android bloqueou o acesso ao APK. Tente novamente.",true)
+  }catch(_:Exception){
+   showUpdateToast("O Android não conseguiu iniciar a instalação.",true)
   }
+ }
  private enum class NexaToastType{SUCCESS,ERROR,WARNING,INFO,INPUT,SELECTION}
  private fun showNexaToast(message:String,type:NexaToastType=NexaToastType.INFO){
   val dark=isDarkTheme

@@ -814,6 +814,12 @@ private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("
  private fun addSheet(){snap();book!!.sheets.add(Sheet(name="Planilha "+(book!!.sheets.size+1)));book!!.active=book!!.sheets.lastIndex;grid.invalidate()}
  private fun edit(r:Int,c:Int){
  grid.selStart=r;grid.selEnd=r;grid.selColStart=c;grid.selColEnd=c
+ val validation=book!!.sheets[book!!.active].validations[key(r,c)]
+ if(validation?.type=="list"&&validation.values.isNotEmpty()){
+  val current=book!!.sheets[book!!.active].cells[key(r,c)]?.input?:""
+  nexaBuilder().setTitle("Selecionar valor").setSingleChoiceItems(validation.values.toTypedArray(),validation.values.indexOf(current)){dialog,which->snap();val sh=book!!.sheets[book!!.active];sh.cells[key(r,c)]=sh.cells[key(r,c)]?.copy(input=validation.values[which])?:Cell(validation.values[which]);grid.invalidate();syncFormulaEditor();dialog.dismiss()}.setNegativeButton("Cancelar",null).show()
+  return
+ }
  syncFormulaEditor()
  formulaEditor?.requestFocus()
  formulaEditor?.selectAll()

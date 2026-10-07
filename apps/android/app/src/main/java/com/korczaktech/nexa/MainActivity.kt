@@ -203,7 +203,7 @@ class MainActivity:Activity(){ // stable startup path
   return e
  }
  private fun sendFeedback(category:String,subject:String,message:String,button:TextView){if(subject.length<3||message.length<10){Toast.makeText(this,"Preencha o título e descreva melhor o feedback.",Toast.LENGTH_SHORT).show();return};button.isEnabled=false;Thread{try{val body=JSONObject().put("category",category).put("subject",subject).put("message",message).put("appVersion",APP_VERSION).put("platform","android").toString();val r=req("/v1/feedback","POST",body,token);runOnUiThread{button.isEnabled=true;if(r.first in 200..299){Toast.makeText(this,"Feedback enviado com sucesso.",Toast.LENGTH_LONG).show();pageBack()}else Toast.makeText(this,"Não foi possível enviar o feedback.",Toast.LENGTH_LONG).show()}}catch(_:Exception){runOnUiThread{button.isEnabled=true;Toast.makeText(this,"Falha de conexão ao enviar o feedback.",Toast.LENGTH_LONG).show()}}}.start()}
- private fun actionButton(label:String){
+ private fun actionButton(label:String):TextView{
   val b=textView(label,15.5f);b.gravity=Gravity.CENTER;b.typeface=Typeface.create(Typeface.DEFAULT,Typeface.BOLD)
   b.setTextColor(Color.rgb(2,18,10));b.setPadding(dp(18),dp(14),dp(18),dp(14));b.isClickable=true;b.isFocusable=true;b.elevation=dp(7).toFloat()
   val normal=rounded(Color.rgb(73,220,128),Color.rgb(129,255,170),17f)

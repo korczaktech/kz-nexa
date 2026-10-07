@@ -603,7 +603,28 @@ private fun aboutPage(){simplePage("Sobre o Nexa","Korczak Nexa"){val hero=Linea
  }
  private fun phase2Version(id:String){Thread{try{val r=req("/v1/workbooks/$id/versions","POST",JSONObject().put("label","Versão manual").put("source","manual").toString(),token);runOnUiThread{Toast.makeText(this,if(r.first in 200..299)"Versão registrada" else "Falha",Toast.LENGTH_SHORT).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}}.start()}
  private fun phase2Analysis(id:String){Thread{try{val j=JSONObject().put("sheetId",book!!.sheets[book!!.active].id).put("range",phase2Range()).put("limit",1000);val r=req("/v1/workbooks/$id/analysis","POST",j.toString(),token);runOnUiThread{AlertDialog.Builder(this).setTitle("Análise de dados").setMessage(if(r.first in 200..299)r.second else "Falha ao analisar").setPositiveButton("OK",null).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}}.start()}
- private fun phase2Templates(){Thread{try{val r=req("/v1/templates","GET",null,token);runOnUiThread{if(r.first !in 200..299){Toast.makeText(this,"Falha ao carregar modelos",Toast.LENGTH_SHORT).show();return@runOnUiThread};val arr=JSONObject().runCatching{JSONArray(r.second)}.getOrNull();if(arr==null||arr.length()==0){Toast.makeText(this,"Nenhum modelo disponível",Toast.LENGTH_SHORT).show();return@runOnUiThread};val names=Array(arr.length()){i->arr.getJSONObject(i).optString("name")};AlertDialog.Builder(this).setTitle("Modelos").setItems(names){_,which->val id=arr.getJSONObject(which).optString("id");Thread{try{val cr=req("/v1/templates/$id/workbooks","POST","{}",token);runOnUiThread{Toast.makeText(this,if(cr.first in 200..299)"Modelo criado" else "Falha ao criar modelo",Toast.LENGTH_SHORT).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}}.start()}.setNegativeButton("Fechar",null).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}}.start()}
+  private fun phase2Templates(){
+   Thread {
+    try {
+     val r=req("/v1/templates","GET",null,token)
+     runOnUiThread {
+      if(r.first !in 200..299){Toast.makeText(this,"Falha ao carregar modelos",Toast.LENGTH_SHORT).show();return@runOnUiThread}
+      val arr=try{JSONArray(r.second)}catch(_:Exception){null}
+      if(arr==null||arr.length()==0){Toast.makeText(this,"Nenhum modelo disponível",Toast.LENGTH_SHORT).show();return@runOnUiThread}
+      val names=Array(arr.length()){i->arr.getJSONObject(i).optString("name")}
+      AlertDialog.Builder(this).setTitle("Modelos").setItems(names){_,which->
+       val id=arr.getJSONObject(which).optString("id")
+       Thread {
+        try {
+         val cr=req("/v1/templates/$id/workbooks","POST","{}",token)
+         runOnUiThread{Toast.makeText(this,if(cr.first in 200..299)"Modelo criado" else "Falha ao criar modelo",Toast.LENGTH_SHORT).show()}
+        } catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}
+       }.start()
+      }.setNegativeButton("Fechar",null).show()
+     }
+    } catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}
+   }.start()
+  }
  private fun phase2Sync(id:String){Thread{try{val j=JSONObject().put("sourceDevice","android-native").put("clientRevision",System.currentTimeMillis()).put("workbook",toJson(book!!));val r=req("/v1/workbooks/$id/sync","POST",j.toString(),token);runOnUiThread{Toast.makeText(this,if(r.first in 200..299)"Sincronização concluída" else "Falha na sincronização",Toast.LENGTH_SHORT).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha de rede",Toast.LENGTH_SHORT).show()}}}.start()}
  private fun save(){val b=book?:return;Thread{try{val r=req(if(b.id==null)"/v1/workbooks" else "/v1/workbooks/"+b.id,if(b.id==null)"POST" else "PUT",toJson(b).toString(),token);if(r.first !in 200..299)throw Exception();if(b.id==null)book=from(JSONObject(r.second));runOnUiThread{Toast.makeText(this,"Salvo",Toast.LENGTH_SHORT).show()}}catch(_:Exception){runOnUiThread{Toast.makeText(this,"Falha ao salvar",Toast.LENGTH_LONG).show()}}}.start()}
  private fun key(r:Int,c:Int)=col(c)+(r+1)

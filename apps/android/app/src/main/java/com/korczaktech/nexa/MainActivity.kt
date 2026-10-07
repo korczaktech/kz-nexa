@@ -625,10 +625,10 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
 
   val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(surfaceColor())}
   val categories=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(6),dp(8),dp(6))}
-  categoryScroll.addView(categories,HorizontalScrollView.LayoutParams(-2,-2));page.addView(categoryScroll)
+  categoryScroll.addView(categories,FrameLayout.LayoutParams(-2,-2));page.addView(categoryScroll)
   val subScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(if(isDarkTheme)Color.rgb(18,27,22) else Color.rgb(247,249,247))}
   val subs=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(5),dp(8),dp(5))}
-  subScroll.addView(subs,HorizontalScrollView.LayoutParams(-2,-2));page.addView(subScroll)
+  subScroll.addView(subs,FrameLayout.LayoutParams(-2,-2));page.addView(subScroll)
 
   val gridHost=FrameLayout(this).apply{setBackgroundColor(surfaceColor())}
   grid=Grid();gridHost.addView(grid,FrameLayout.LayoutParams(-1,-1));page.addView(gridHost,LinearLayout.LayoutParams(-1,0,1f))
@@ -636,7 +636,7 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
   val sheetBar=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(if(isDarkTheme)Color.rgb(16,25,20) else Color.WHITE)}
   val sheets=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(6),dp(8),dp(6))}
   fun refreshSheets(){sheets.removeAllViews();book?.sheets?.forEachIndexed{idx,s->val chip=TextView(this).apply{text=s.name;gravity=Gravity.CENTER;textSize=12f;typeface=if(idx==book?.active)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;setTextColor(if(idx==book?.active){if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(19,122,84)}else mutedColor());background=rounded(if(idx==book?.active){if(isDarkTheme)Color.rgb(25,56,42)else Color.rgb(235,246,239)}else Color.TRANSPARENT,Color.TRANSPARENT,12f);setPadding(dp(14),0,dp(14),0);setOnClickListener{book?.active=idx;grid.invalidate();refreshSheets()}};sheets.addView(chip,LinearLayout.LayoutParams(-2,dp(38)).apply{rightMargin=dp(5)})};val add=TextView(this).apply{text="+";gravity=Gravity.CENTER;textSize=21f;setTextColor(if(isDarkTheme)Color.rgb(82,232,139)else Color.rgb(19,122,84));background=rounded(surfaceColor(),surfaceBorder(),12f);setOnClickListener{addSheet();refreshSheets()}};sheets.addView(add,LinearLayout.LayoutParams(dp(42),dp(38)))}
-  refreshSheets();sheetBar.addView(sheets,HorizontalScrollView.LayoutParams(-2,-2));page.addView(sheetBar)
+  refreshSheets();sheetBar.addView(sheets,FrameLayout.LayoutParams(-2,-2));page.addView(sheetBar)
 
   fun action(label:String,sub:String,click:()->Unit){val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(10),dp(6),dp(10),dp(6));background=rounded(surfaceColor(),Color.TRANSPARENT,12f);setOnClickListener{click()}}
    box.addView(textView(label,14f,inkColor()).apply{gravity=Gravity.CENTER;typeface=Typeface.DEFAULT_BOLD});box.addView(textView(sub,10f,mutedColor()).apply{gravity=Gravity.CENTER});subs.addView(box,LinearLayout.LayoutParams(-2,dp(52)).apply{rightMargin=dp(5)})}

@@ -578,6 +578,37 @@ private fun iconRes(icon:String):Int=when(icon){"▤"->R.drawable.ic_file;"★"-
  it.addView(actionCard("Atualizações","Versão e atualizações disponíveis","↻"){updatesPage()})
  it.addView(actionCard("Dar feedback","Enviar uma mensagem para a equipe","♡"){feedbackPage()})
 }}
+ private fun editorSettingsPage(){simplePage("Editor","Preferências de edição e planilha"){
+ fun boolSetting(title:String,sub:String,key:String,default:Boolean):View{
+  val row=settingRow(title,sub,getPreferences(0).getBoolean(key,default));val sw=(row as ViewGroup).getChildAt(2) as Switch
+  sw.setOnCheckedChangeListener{_,v->getPreferences(0).edit().putBoolean(key,v).apply();showNexaToast("Preferência salva",NexaToastType.SUCCESS)};row.setOnClickListener{sw.isChecked=!sw.isChecked};return row
+ }
+ it.addView(boolSetting("Abrir com a última aba","Restaurar a última aba usada","editorLastSheet",true))
+ it.addView(boolSetting("Quebra automática de texto","Ajustar texto dentro das células","editorWrap",true))
+ it.addView(boolSetting("Grade visível","Mostrar linhas da planilha","editorGrid",true))
+ it.addView(boolSetting("Salvar ao sair","Salvar antes de fechar o editor","editorSaveOnExit",true))
+ it.addView(infoCard("Zoom","O zoom é controlado pela categoria Exibir no editor."))
+ it.addView(infoCard("Fórmulas","O editor suporta fórmulas, referências e operações de planilha na implementação atual."))
+}}
+private fun privacyPage(){simplePage("Privacidade","Controle de dados locais e sessão"){
+ it.addView(infoCard("Dados locais","Preferências, sessão e informações de perfil deste aparelho são armazenadas localmente quando necessárias para o funcionamento do Nexa."))
+ it.addView(actionCard("Sessão","Ver informações da sessão atual","●"){securityPage()})
+ it.addView(actionCard("Permissões","Verificar permissões utilizadas","●"){permissionPage()})
+ it.addView(actionCard("Restaurar preferências","Voltar às configurações padrão","⌫"){
+  nexaBuilder().setTitle("Restaurar preferências?").setMessage("As preferências deste aparelho serão restauradas. Documentos no servidor não serão apagados.").setNegativeButton("Cancelar",null).setPositiveButton("Restaurar"){_,_->getPreferences(0).edit().clear().apply();isDarkTheme=false;applySystemTheme();showNexaToast("Preferências restauradas",NexaToastType.SUCCESS);settingsPage()}.show()
+ })
+}}
+private fun permissionPage(){simplePage("Permissões","Estado das permissões necessárias ao Nexa"){
+ it.addView(infoCard("Internet","Ativa • necessária para conta, sincronização, status e atualizações."))
+ it.addView(infoCard("Instalação de atualizações","O Android controla esta permissão e pode solicitar autorização para instalar APKs oficiais."))
+ it.addView(infoCard("Outras permissões","O Nexa não solicita câmera, contatos ou localização na versão atual."))
+}}
+private fun updatesPage(){simplePage("Atualizações","Versão instalada e disponibilidade"){
+ val status=infoCard("Versão instalada","Nexa $APP_VERSION • código $APP_VERSION_CODE")
+ it.addView(status)
+ it.addView(actionCard("Procurar atualização","Consultar a versão oficial mais recente","↻"){checkForUpdate();showNexaToast("Verificando atualizações…",NexaToastType.SELECTION)})
+ it.addView(infoCard("Distribuição","Atualizações oficiais são distribuídas pelo canal de releases do Nexa e instaladas somente após confirmação do usuário."))
+}}
  private fun feedbackPage(){
  simplePage("Dar Feedback","Envie uma mensagem diretamente para a equipe do Nexa"){
   val intro=infoCard("Fale com a equipe","Seu feedback fica registrado no Nexa para análise da equipe. Escolha o tipo, dê um título e descreva o que aconteceu.")

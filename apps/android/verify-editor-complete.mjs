@@ -9,7 +9,8 @@ const checks=[
  ["6 Sort/filter",["sortSelection()","filterSelection()"]],
  ["7 Formatting",["toggle(","fontSize()","wrap()","numberFormat()","border()","conditional()","validation()"]],
  ["8 Merge",["merge()","unmerge()","rangeOverlaps"]],
- ["9 AutoFill",["fill()","shiftFormula("]],
+ ["9 AutoFill",["autoFill()","shiftFormula(","formatSeriesNumber("]],
+ ["9b AutoFill",["autoFill()","formatSeriesNumber("]],
  ["10 Rows/columns",["insertRows()","insertCols()","deleteRows()","deleteCols()"]],
  ["11 Freeze/hide/group",["freeze()","hide()","show()","groupRow()","groupCol()","toggleGroups()"]],
  ["12 Keyboard",["setOnKeyListener","KEYCODE_C","KEYCODE_X","KEYCODE_V","KEYCODE_Z","KEYCODE_Y","KEYCODE_DPAD_LEFT","KEYCODE_DPAD_RIGHT","KEYCODE_DPAD_UP","KEYCODE_DPAD_DOWN"]],
@@ -18,4 +19,4 @@ const checks=[
 ];
 for(const [name,need] of checks)for(const token of need)if(!p.includes(token))throw new Error(name+" ausente: "+token);
 if(/WebView|loadUrl\(/.test(p))throw new Error("Editor Android não pode depender de WebView.");
-console.log("editor completeness verification: PASS — 14/14 functional blocks present");
+console.log("editor completeness verification: PASS — editor functional blocks present");

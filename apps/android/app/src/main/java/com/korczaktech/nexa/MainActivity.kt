@@ -1162,12 +1162,12 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
       }
     }
     private fun vLookup(args:List<String>):Double{
-      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val range=rangeCells(args[1]);val colIndex=evalArg(args[2]).toInt()
-      if(colIndex<1)throw Exception("VALUE");val rows=rangeRows(range);for(row in rows){if(row.firstOrNull()?.let{cellText(it).equals(needle,true)}==true){return row.getOrNull(colIndex-1)?.let{it.replace(",",".").toDoubleOrNull()}?:0.0}}
+      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val range=rangeRows(args[1]);val colIndex=evalArg(args[2]).toInt()
+      if(colIndex<1)throw Exception("VALUE");val rows=rangeRows(range);for(row in range){if(row.firstOrNull()?.let{cellText(it).equals(needle,true)}==true){return row.getOrNull(colIndex-1)?.let{it.replace(",",".").toDoubleOrNull()}?:0.0}}
       if(args.size>3&&evalArg(args[3])!=0.0)throw Exception("N/A");return 0.0
     }
     private fun hLookup(args:List<String>):Double{
-      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val range=rangeCells(args[1]);val rowIndex=evalArg(args[2]).toInt();val rows=rangeRows(range)
+      if(args.size<3)throw Exception("args");val needle=criteriaText(args[0]);val rows=rangeRows(args[1]);val rowIndex=evalArg(args[2]).toInt()
       if(rowIndex<1||rowIndex>rows.size)throw Exception("VALUE");val header=rows.firstOrNull()?:emptyList();val at=header.indexOfFirst{cellText(it).equals(needle,true)};if(at<0)return 0.0;return rows.getOrNull(rowIndex-1)?.getOrNull(at)?.replace(",",".")?.toDoubleOrNull()?:0.0
     }
     private fun indexLookup(args:List<String>):Double{

@@ -926,6 +926,8 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     val accent=if(dark)Color.rgb(82,232,139)else Color.rgb(19,122,84)
     c.drawColor(bg)
     p.style=Paint.Style.FILL
+    fun cellX(k:Int)=head+colOffset(s,k)-if(k>=s.frozenCols)panX else 0f
+    fun cellY(r:Int)=head+rowOffset(s,r)-if(r>=s.frozenRows)panY else 0f
     fun visible(r:Int,k:Int):Boolean{
       val rowCollapsed=s.groupedRows.isNotEmpty()&&collapsedRows.contains(s.groupedRows.minOrNull()?:-1)&&s.groupedRows.contains(r)
       val colCollapsed=s.groupedCols.isNotEmpty()&&collapsedCols.contains(s.groupedCols.minOrNull()?:-1)&&s.groupedCols.contains(k)
@@ -934,8 +936,6 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
       val x=cellX(k);val y=cellY(r)
       return x+w>=head&&x<=width/zoom&&y+h>=head&&y<=height/zoom
     }
-    fun cellX(k:Int)=head+colOffset(s,k)-if(k>=s.frozenCols)panX else 0f
-    fun cellY(r:Int)=head+rowOffset(s,r)-if(r>=s.frozenRows)panY else 0f
     for(r in 0 until 200)for(k in 0 until 50){
       if(s.hiddenRows.contains(r)||s.hiddenCols.contains(k)||!visible(r,k))continue
       val x=cellX(k);val y=cellY(r);val w=colWidth(s,k);val h=rowHeight(s,r)
@@ -989,7 +989,8 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
     }
     // Coluna/linha headers ficam fora da grade e acompanham a seleção.
     p.style=Paint.Style.FILL;p.color=header;c.drawRect(0f,0f,width/zoom,head,p);c.drawRect(0f,head,head,height/zoom,p)
-    for(k in 0 until 50)if(!s.hiddenCols.contains(k)&&!(s.groupedCols.contains(k)&&collapsedCols.contains(s.groupedCols.minOrNull()?:-1))){\n      val w=colWidth(s,k)
+    for(k in 0 until 50)if(!s.hiddenCols.contains(k)&&!(s.groupedCols.contains(k)&&collapsedCols.contains(s.groupedCols.minOrNull()?:-1))){
+      val w=colWidth(s,k)
       val x=cellX(k);if(x+w<head||x>width/zoom)continue
       val selected=k in selColStart..selColEnd
       p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(x,0f,x+w,head,p)
@@ -997,7 +998,8 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
       p.color=if(selected)accent else muted;p.textSize=13f;p.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
       val label=col(k);val tw=p.measureText(label);c.drawText(label,x+(w-tw)/2f,head/2f-(p.ascent()+p.descent())/2f,p)
     }
-    for(r in 0 until 200)if(!s.hiddenRows.contains(r)&&!(s.groupedRows.contains(r)&&collapsedRows.contains(s.groupedRows.minOrNull()?:-1))){\n      val h=rowHeight(s,r)
+    for(r in 0 until 200)if(!s.hiddenRows.contains(r)&&!(s.groupedRows.contains(r)&&collapsedRows.contains(s.groupedRows.minOrNull()?:-1))){
+      val h=rowHeight(s,r)
       val y=cellY(r);if(y+h<head||y>height/zoom)continue
       val selected=r in selStart..selEnd
       p.color=if(selected)headerStrong else header;p.style=Paint.Style.FILL;c.drawRect(0f,y,head,y+h,p)

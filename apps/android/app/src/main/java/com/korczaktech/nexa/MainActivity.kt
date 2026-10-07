@@ -210,7 +210,7 @@ class MainActivity:Activity(){ // stable startup path
   val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(9),dp(16),dp(9));background=rounded(fill,stroke,18f);elevation=dp(10).toFloat()}
   val icon=TextView(this).apply{text=iconText;gravity=Gravity.CENTER;textSize=17f;typeface=Typeface.DEFAULT_BOLD;setTextColor(accent);background=rounded(if(dark)Color.argb(35,255,255,255)else Color.argb(35,0,0,0),Color.TRANSPARENT,12f)}
   box.addView(icon,LinearLayout.LayoutParams(dp(32),dp(32)).apply{rightMargin=dp(10)})
-  val tv=textView(message,13.5f,if(dark)Color.rgb(239,248,242)Color.rgb(31,45,37));tv.typeface=Typeface.DEFAULT_BOLD;tv.maxLines=3;box.addView(tv,LinearLayout.LayoutParams(-2,-2))
+  val tv=textView(message,13.5f,if(dark)Color.rgb(239,248,242) else Color.rgb(31,45,37));tv.typeface=Typeface.DEFAULT_BOLD;tv.maxLines=3;box.addView(tv,LinearLayout.LayoutParams(-2,-2))
   Toast(this).apply{duration=Toast.LENGTH_LONG;view=box;setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(84));show()}
  }
  private fun showUpdateToast(message:String,error:Boolean){showNexaToast(message,if(error)NexaToastType.ERROR else NexaToastType.INFO)}

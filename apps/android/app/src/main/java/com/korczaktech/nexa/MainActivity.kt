@@ -306,69 +306,79 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   fun stop(){running=false;removeCallbacks(ticker)}
  }
  private fun home(){
-  root.removeAllViews()
-  window.statusBarColor=Color.rgb(245,247,244)
-  window.navigationBarColor=Color.WHITE
-  val view=layoutInflater.inflate(R.layout.activity_main,root,false)
-  root.addView(view)
-
-  val name=profileName.ifBlank{"Nexa"}
-  val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
-  view.findViewById<TextView>(R.id.userName).text=name
-  view.findViewById<TextView>(R.id.avatar).text=initials
-  view.findViewById<TextView>(R.id.featuredName).text=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
-  view.findViewById<TextView>(R.id.featuredEdited).text="Editado recentemente"
-
-  val preview=view.findViewById<GridLayout>(R.id.gridPreview)
-  val highlighted=setOf(1,4,9,10,17,19)
-  for(i in 0 until 24){
-   val cell=View(this)
-   cell.setBackgroundResource(if(i==11)R.drawable.bg_cell_sel else if(i in highlighted)R.drawable.bg_cell_hl else R.drawable.bg_cell)
-   val lp=GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED),GridLayout.spec(GridLayout.UNDEFINED,1f))
-   lp.width=0;lp.height=dp(18);lp.setMargins(dp(2),dp(2),dp(2),dp(2));preview.addView(cell,lp)
-  }
-
-  val list=view.findViewById<LinearLayout>(R.id.listRecents)
-  val recentBook=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
-  val row=layoutInflater.inflate(R.layout.item_recent,list,false)
-  row.findViewById<TextView>(R.id.recentName).text=recentBook
-  row.findViewById<TextView>(R.id.recentMeta).text="Editado recentemente"
-  row.setOnClickListener{editor()}
-  list.addView(row)
-
-  view.findViewById<View>(R.id.btnRefresh).setOnClickListener{
-   it.animate().rotationBy(360f).setDuration(600).start()
-   load()
-  }
-  view.findViewById<View>(R.id.avatar).setOnClickListener{profilePage()}
-  view.findViewById<View>(R.id.userName).setOnClickListener{profilePage()}
-  view.findViewById<View>(R.id.btnOpen).setOnClickListener{editor()}
-  view.findViewById<View>(R.id.btnSeeAll).setOnClickListener{allDocumentsPage()}
-  view.findViewById<View>(R.id.shortcutImport).setOnClickListener{addFilePage()}
-  view.findViewById<View>(R.id.shortcutOpen).setOnClickListener{filesPage()}
-  view.findViewById<View>(R.id.shortcutFavorites).setOnClickListener{favoritesPage()}
-  view.findViewById<View>(R.id.navHome).setOnClickListener{home()}
-  view.findViewById<View>(R.id.navFiles).setOnClickListener{filesPage()}
-  view.findViewById<View>(R.id.btnCreate).setOnClickListener{newDocument()}
-  view.findViewById<View>(R.id.navTemplates).setOnClickListener{phase2Templates()}
-  view.findViewById<View>(R.id.navMore).setOnClickListener{morePage()}
-
-  val green=Color.rgb(19,122,84)
-  val muted=Color.rgb(91,106,98)
-  val active=view.findViewById<View>(R.id.pillHome)
-  active.visibility=View.VISIBLE
-  view.findViewById<View>(R.id.pillFiles).visibility=View.INVISIBLE
-  view.findViewById<View>(R.id.pillTemplates).visibility=View.INVISIBLE
-  view.findViewById<View>(R.id.pillMore).visibility=View.INVISIBLE
-  view.findViewById<ImageView>(R.id.iconHome).setColorFilter(green)
-  view.findViewById<ImageView>(R.id.iconFiles).setColorFilter(muted)
-  view.findViewById<ImageView>(R.id.iconTemplates).setColorFilter(muted)
-  view.findViewById<ImageView>(R.id.iconMore).setColorFilter(muted)
-  view.findViewById<TextView>(R.id.labelHome).setTextColor(green)
-  view.findViewById<TextView>(R.id.labelFiles).setTextColor(muted)
-  view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted)
-  view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
- } private fun storageCard():View{val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(17),dp(15),dp(17),dp(14));box.background=rounded(Color.rgb(5,27,16),Color.rgb(37,108,67),20f);val stat=android.os.StatFs(android.os.Environment.getDataDirectory().path);val total=stat.totalBytes.toDouble();val free=stat.availableBytes.toDouble();val used=(total-free).coerceAtLeast(0.0);val pct=((used/total)*100.0).coerceIn(0.0,100.0);val row=LinearLayout(this);row.gravity=Gravity.CENTER_VERTICAL;val t=textView("Armazenamento do celular",15f,Color.WHITE);t.typeface=Typeface.DEFAULT_BOLD;row.addView(t,LinearLayout.LayoutParams(0,-2,1f));val p=textView(String.format(java.util.Locale("pt","BR"),"%.1f%%",pct),16f,Color.rgb(110,255,157));p.typeface=Typeface.DEFAULT_BOLD;row.addView(p);box.addView(row);val bar=android.widget.ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);bar.max=1000;bar.progress=(pct*10).toInt();bar.progressDrawable=android.graphics.drawable.ClipDrawable(rounded(Color.rgb(88,236,137),Color.TRANSPARENT,8f),Gravity.LEFT,1);box.addView(bar,LinearLayout.LayoutParams(-1,dp(9)).apply{topMargin=dp(15);bottomMargin=dp(8)});box.addView(textView("${formatBytes(used)} usados de ${formatBytes(total)}",12.5f,Color.rgb(147,192,163)));return box}
+  try{
+   root.removeAllViews()
+   window.statusBarColor=Color.rgb(245,247,244)
+   window.navigationBarColor=Color.WHITE
+   val view=layoutInflater.inflate(R.layout.activity_main,root,false)
+   root.addView(view)
+   val name=profileName.ifBlank{"Nexa"}
+   val initials=name.trim().split(Regex("\\s+")).filter{it.isNotEmpty()}.take(2).joinToString(""){it.first().uppercase()}.ifBlank{"N"}
+   view.findViewById<TextView>(R.id.userName).text=name
+   view.findViewById<TextView>(R.id.avatar).text=initials
+   view.findViewById<TextView>(R.id.featuredName).text=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
+   view.findViewById<TextView>(R.id.featuredEdited).text="Editado recentemente"
+   val preview=view.findViewById<GridLayout>(R.id.gridPreview)
+   preview.removeAllViews()
+   val highlighted=setOf(1,4,9,10,17,19)
+   for(i in 0 until 24){
+    val cell=View(this)
+    cell.setBackgroundResource(if(i==11)R.drawable.bg_cell_sel else if(i in highlighted)R.drawable.bg_cell_hl else R.drawable.bg_cell)
+    val lp=GridLayout.LayoutParams(GridLayout.spec(i/8),GridLayout.spec(i%8,1f))
+    lp.width=0;lp.height=dp(18);lp.setMargins(dp(2),dp(2),dp(2),dp(2))
+    preview.addView(cell,lp)
+   }
+   val list=view.findViewById<LinearLayout>(R.id.listRecents)
+   list.removeAllViews()
+   val recentBook=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
+   val row=layoutInflater.inflate(R.layout.item_recent,list,false)
+   row.findViewById<TextView>(R.id.recentName).text=recentBook
+   row.findViewById<TextView>(R.id.recentMeta).text="Editado recentemente"
+   row.setOnClickListener{editor()};list.addView(row)
+   view.findViewById<View>(R.id.btnRefresh).setOnClickListener{it.animate().rotationBy(360f).setDuration(600).start();load()}
+   view.findViewById<View>(R.id.avatar).setOnClickListener{profilePage()}
+   view.findViewById<View>(R.id.userName).setOnClickListener{profilePage()}
+   view.findViewById<View>(R.id.btnOpen).setOnClickListener{editor()}
+   view.findViewById<View>(R.id.btnSeeAll).setOnClickListener{allDocumentsPage()}
+   view.findViewById<View>(R.id.shortcutImport).setOnClickListener{addFilePage()}
+   view.findViewById<View>(R.id.shortcutOpen).setOnClickListener{filesPage()}
+   view.findViewById<View>(R.id.shortcutFavorites).setOnClickListener{favoritesPage()}
+   view.findViewById<View>(R.id.navHome).setOnClickListener{home()}
+   view.findViewById<View>(R.id.navFiles).setOnClickListener{filesPage()}
+   view.findViewById<View>(R.id.btnCreate).setOnClickListener{newDocument()}
+   view.findViewById<View>(R.id.navTemplates).setOnClickListener{phase2Templates()}
+   view.findViewById<View>(R.id.navMore).setOnClickListener{morePage()}
+   val green=Color.rgb(19,122,84);val muted=Color.rgb(91,106,98)
+   view.findViewById<View>(R.id.pillHome).visibility=View.VISIBLE
+   view.findViewById<View>(R.id.pillFiles).visibility=View.INVISIBLE
+   view.findViewById<View>(R.id.pillTemplates).visibility=View.INVISIBLE
+   view.findViewById<View>(R.id.pillMore).visibility=View.INVISIBLE
+   view.findViewById<ImageView>(R.id.iconHome).setColorFilter(green)
+   view.findViewById<ImageView>(R.id.iconFiles).setColorFilter(muted)
+   view.findViewById<ImageView>(R.id.iconTemplates).setColorFilter(muted)
+   view.findViewById<ImageView>(R.id.iconMore).setColorFilter(muted)
+   view.findViewById<TextView>(R.id.labelHome).setTextColor(green)
+   view.findViewById<TextView>(R.id.labelFiles).setTextColor(muted)
+   view.findViewById<TextView>(R.id.labelTemplates).setTextColor(muted)
+   view.findViewById<TextView>(R.id.labelMore).setTextColor(muted)
+  }catch(x:Throwable){android.util.Log.e("Nexa","Home initialization failed",x);showHomeFailure(x)}
+ }
+ private fun showHomeFailure(x:Throwable){
+  try{
+   root.removeAllViews();window.statusBarColor=Color.rgb(1,9,5);window.navigationBarColor=Color.rgb(6,16,11)
+   val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(28),dp(28),dp(28),dp(28));setBackgroundColor(Color.rgb(1,9,5))}
+   box.addView(textView("Nexa",30f,Color.WHITE).apply{gravity=Gravity.CENTER})
+   box.addView(textView("Não foi possível abrir a interface.",16f,Color.rgb(255,150,150)).apply{gravity=Gravity.CENTER;setPadding(0,dp(14),0,dp(8))})
+   box.addView(textView("O acesso foi validado, mas a tela inicial encontrou um erro.\n\n"+x.javaClass.simpleName+": "+(x.message?:"sem detalhes"),13f,Color.rgb(190,220,201)).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER})
+   val retry=actionButton("Tentar novamente");retry.setOnClickListener{load()}
+   box.addView(retry,LinearLayout.LayoutParams(-1,dp(54)).apply{topMargin=dp(22)})
+   val logout=textView("Voltar ao login",14f,Color.rgb(100,235,150)).apply{gravity=Gravity.CENTER;isClickable=true}
+   logout.setOnClickListener{getPreferences(0).edit().clear().apply();token=null;uid="";profileName="Meu perfil";book=null;login()}
+   box.addView(logout,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(8)})
+   root.addView(box,FrameLayout.LayoutParams(-1,-1))
+  }catch(_:Throwable){try{getPreferences(0).edit().clear().apply();token=null;login()}catch(_:Throwable){}}
+ }
+ private fun storageCard():View{val box=LinearLayout(this);box.orientation=LinearLayout.VERTICAL;box.setPadding(dp(17),dp(15),dp(17),dp(14));box.background=rounded(Color.rgb(5,27,16),Color.rgb(37,108,67),20f);val stat=android.os.StatFs(android.os.Environment.getDataDirectory().path);val total=stat.totalBytes.toDouble();val free=stat.availableBytes.toDouble();val used=(total-free).coerceAtLeast(0.0);val pct=((used/total)*100.0).coerceIn(0.0,100.0);val row=LinearLayout(this);row.gravity=Gravity.CENTER_VERTICAL;val t=textView("Armazenamento do celular",15f,Color.WHITE);t.typeface=Typeface.DEFAULT_BOLD;row.addView(t,LinearLayout.LayoutParams(0,-2,1f));val p=textView(String.format(java.util.Locale("pt","BR"),"%.1f%%",pct),16f,Color.rgb(110,255,157));p.typeface=Typeface.DEFAULT_BOLD;row.addView(p);box.addView(row);val bar=android.widget.ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);bar.max=1000;bar.progress=(pct*10).toInt();bar.progressDrawable=android.graphics.drawable.ClipDrawable(rounded(Color.rgb(88,236,137),Color.TRANSPARENT,8f),Gravity.LEFT,1);box.addView(bar,LinearLayout.LayoutParams(-1,dp(9)).apply{topMargin=dp(15);bottomMargin=dp(8)});box.addView(textView("${formatBytes(used)} usados de ${formatBytes(total)}",12.5f,Color.rgb(147,192,163)));return box}
  private fun formatBytes(v:Double):String{val units=arrayOf("B","KB","MB","GB","TB");var n=v;var i=0;while(n>=1024&&i<units.lastIndex){n/=1024;i++};return if(i==0)"${n.toInt()} ${units[i]}" else String.format(java.util.Locale("pt","BR"),"%.1f %s",n,units[i])}
  private fun homeCard(title:String,sub:String,icon:String,action:()->Unit):View{val b=LinearLayout(this);b.gravity=Gravity.CENTER_VERTICAL;b.setPadding(dp(15),dp(10),dp(15),dp(10));b.background=rounded(Color.rgb(5,19,12),Color.rgb(29,75,49),18f);val ic=textView(icon,24f,Color.rgb(102,245,150));ic.gravity=Gravity.CENTER;b.addView(ic,LinearLayout.LayoutParams(dp(48),dp(48)).apply{rightMargin=dp(12)});val tx=LinearLayout(this);tx.orientation=LinearLayout.VERTICAL;val a=textView(title,15f,Color.WHITE);a.typeface=Typeface.DEFAULT_BOLD;tx.addView(a);tx.addView(textView(sub,12f,Color.rgb(135,178,150)));b.addView(tx,LinearLayout.LayoutParams(0,-2,1f));b.setOnClickListener{action()};return b}
  private fun bottomNav(selected:Int):View{val nav=LinearLayout(this);nav.gravity=Gravity.CENTER_VERTICAL;nav.setPadding(dp(7),dp(7),dp(7),dp(7));nav.background=rounded(Color.rgb(3,20,12),Color.rgb(25,77,48),22f);fun item(label:String,icon:String,action:()->Unit):TextView{val v=textView(icon+"\\n"+label,11f,Color.rgb(151,190,165));v.gravity=Gravity.CENTER;v.setOnClickListener{action()};return v};nav.addView(item("Início","⌂"){home()},LinearLayout.LayoutParams(0,-1,1f));nav.addView(item("Armazenamento","▱"){storagePage()},LinearLayout.LayoutParams(0,-1,1f));val plus=textView("+",30f,Color.rgb(4,35,18));plus.gravity=Gravity.CENTER;plus.typeface=Typeface.DEFAULT_BOLD;plus.background=rounded(Color.rgb(133,255,171),Color.rgb(190,255,211),50f);plus.setOnClickListener{newDocument()};nav.addView(plus,LinearLayout.LayoutParams(dp(58),dp(58)).apply{gravity=Gravity.CENTER;leftMargin=dp(5);rightMargin=dp(5)});nav.addView(item("Arquivos","▤"){filesPage()},LinearLayout.LayoutParams(0,-1,1f));nav.addView(item("Mais","☰"){morePage()},LinearLayout.LayoutParams(0,-1,1f));return nav}

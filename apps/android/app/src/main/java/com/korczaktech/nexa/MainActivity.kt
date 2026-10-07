@@ -760,7 +760,7 @@ private fun renderSimplePage(title:String,subtitle:String,build:(LinearLayout)->
 
   val formula=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(7),dp(10),dp(7));setBackgroundColor(if(isDarkTheme)Color.rgb(15,23,19) else Color.rgb(242,246,243))}
   formula.addView(textView("fx",14f,if(isDarkTheme)Color.rgb(82,232,139) else Color.rgb(19,122,84)).apply{typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(32),dp(36)))
-  val formulaValue=EditText(this).apply{hint="Conteúdo da célula";setTextColor(inkColor());setHintTextColor(mutedColor());textSize=13f;singleLine=true;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),0,dp(10),0);background=rounded(surfaceColor(),surfaceBorder(),10f);imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_DONE;setOnEditorActionListener{_,_,_->commitFormulaEditor();clearFocus();true};setOnFocusChangeListener{_,focused->if(!focused)commitFormulaEditor()}}
+  val formulaValue=EditText(this).apply{hint="Conteúdo da célula";setTextColor(inkColor());setHintTextColor(mutedColor());textSize=13f;setSingleLine(true);gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),0,dp(10),0);background=rounded(surfaceColor(),surfaceBorder(),10f);imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_DONE;setOnEditorActionListener{_,_,_->commitFormulaEditor();clearFocus();true};setOnFocusChangeListener{_,focused->if(!focused)commitFormulaEditor()}}
   formulaEditor=formulaValue
   formula.addView(formulaValue,LinearLayout.LayoutParams(0,dp(36),1f))
   formula.addView(textView("⋮",22f,mutedColor()).apply{gravity=Gravity.CENTER;setOnClickListener{editorMoreMenu()}},LinearLayout.LayoutParams(dp(38),dp(36)))

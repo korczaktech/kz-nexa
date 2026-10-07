@@ -140,12 +140,10 @@ class MainActivity:Activity(){ // stable startup path
     target=File(updates,"Korczak-HUB-Nexa-$tag.apk")
     if(target.exists())target.delete()
     val conn=(URL(url).openConnection() as HttpURLConnection).apply{
-     instanceFollowRedirects=true
-     requestMethod="GET"
+     instanceFollowRedirects=true;requestMethod="GET"
      setRequestProperty("User-Agent","Korczak-Nexa-Updater")
      setRequestProperty("Accept","application/vnd.android.package-archive")
-     connectTimeout=20000
-     readTimeout=30000
+     connectTimeout=20000;readTimeout=30000
     }
     if(conn.responseCode !in 200..299)throw IOException("GitHub HTTP ${conn.responseCode}")
     conn.inputStream.use{input->FileOutputStream(target).use{output->
@@ -159,16 +157,21 @@ class MainActivity:Activity(){ // stable startup path
      if(input.read(magic)!=4||magic[0].toInt()!=0x50||magic[1].toInt()!=0x4B||magic[2].toInt()!=0x03||magic[3].toInt()!=0x04)throw IOException("O download não retornou um APK válido")
     }
     runOnUiThread{
-     val file=target ?: return@runOnUiThread
-     val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"\${packageName}.fileprovider",file)
-     if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
-      pendingInstallUri=uri
-      AlertDialog.Builder(this@MainActivity)
-       .setTitle("Permitir atualização do Nexa")
-       .setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.")
-       .setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}}
-       .setNegativeButton("Agora não",null).show()
-     }else launchApkInstaller(uri)
+     try{
+      val file=target ?: throw IOException("Arquivo da atualização não encontrado")
+      val uri=androidx.core.content.FileProvider.getUriForFile(this@MainActivity,"\${packageName}.fileprovider",file)
+      if(android.os.Build.VERSION.SDK_INT>=26&&!packageManager.canRequestPackageInstalls()){
+       pendingInstallUri=uri
+       AlertDialog.Builder(this@MainActivity)
+        .setTitle("Permitir atualização do Nexa")
+        .setMessage("O Android bloqueou a instalação automática. Ative “Permitir desta fonte” para o Nexa e volte ao aplicativo. A instalação continuará automaticamente.")
+        .setPositiveButton("Abrir configuração"){_,_->try{startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:$packageName")))}catch(_:Exception){try{startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))}catch(_:Exception){}}}
+        .setNegativeButton("Agora não"){_,_->pendingInstallUri=null}.show()
+      }else launchApkInstaller(uri)
+     }catch(e:Exception){
+      target?.delete();pendingInstallUri=null
+      showUpdateToast("Não foi possível preparar a instalação: ${e.message ?: "arquivo inválido"}.",true)
+     }
     }
    }catch(e:Exception){
     target?.delete()
@@ -178,27 +181,23 @@ class MainActivity:Activity(){ // stable startup path
  }
  private fun launchApkInstaller(uri:Uri){
   try{
-   val intent=Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
-    data=uri
-    type="application/vnd.android.package-archive"
-    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+   val flags=Intent.FLAG_GRANT_READ_URI_PERMISSION
+   val install=Intent(Intent.ACTION_INSTALL_PACKAGE).apply{
+    data=uri;type="application/vnd.android.package-archive";addFlags(flags)
     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
-    putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE,true)
    }
-   grantUriPermission("com.android.packageinstaller",uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
-   startActivity(intent)
-  }catch(_:Exception){
-   try{
-    val intent=Intent(Intent.ACTION_VIEW).apply{
-     data=uri
-     type="application/vnd.android.package-archive"
-     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-     clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
-    }
-    startActivity(intent)
-   }catch(e:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
+   if(packageManager.queryIntentActivities(install,0).isNotEmpty()){startActivity(install);return}
+  }catch(_:Exception){}
+  try{
+   val view=Intent(Intent.ACTION_VIEW).apply{
+    data=uri;type="application/vnd.android.package-archive"
+    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    clipData=android.content.ClipData.newRawUri("Nexa APK",uri)
+   }
+   if(packageManager.queryIntentActivities(view,0).isNotEmpty())startActivity(view)
+   else showUpdateToast("Não há um instalador de APK disponível no Android.",true)
+  }catch(_:Exception){showUpdateToast("O Android não conseguiu iniciar a instalação.",true)}
   }
- }
  private fun showUpdateToast(message:String,error:Boolean){val box=LinearLayout(this);box.orientation=LinearLayout.HORIZONTAL;box.gravity=Gravity.CENTER_VERTICAL;box.setPadding(dp(16),dp(10),dp(18),dp(10));box.background=rounded(if(error)Color.rgb(35,16,17)else Color.rgb(6,22,14),if(error)Color.rgb(150,65,75)else Color.rgb(73,220,128),18f);val icon=TextView(this);icon.text=if(error)"!" else "↻";icon.gravity=Gravity.CENTER;icon.textSize=18f;icon.typeface=Typeface.DEFAULT_BOLD;icon.setTextColor(if(error)Color.rgb(255,150,160)else Color.rgb(108,255,148));box.addView(icon,LinearLayout.LayoutParams(dp(30),dp(30)).apply{rightMargin=dp(10)});val tv=textView(message,13.5f,Color.WHITE);tv.typeface=Typeface.DEFAULT_BOLD;box.addView(tv,LinearLayout.LayoutParams(-2,-2));val toast=Toast(this);toast.duration=Toast.LENGTH_LONG;toast.view=box;toast.setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL,0,dp(82));toast.show()}
  private fun dp(v:Int)=((v*resources.displayMetrics.density)+0.5f).toInt()
  private fun textView(text:String,size:Float,color:Int=Color.WHITE):TextView{val v=TextView(this);v.text=text;v.textSize=size;v.setTextColor(color);return v}

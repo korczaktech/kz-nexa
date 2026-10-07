@@ -1,5 +1,5 @@
 import Fastify from "fastify";import cors from "@fastify/cors";import {config} from "./config.js";import {connectDatabase,closeDatabase}from "./db.js";import {healthRoutes}from "./routes/health.js";import {authRoutes}from "./routes/auth.js";import {workbookRoutes}from "./routes/workbooks.js";
-import{phase2Routes}from"./routes/phase2.js";
-const app=Fastify({logger:true});await app.register(cors,{origin:config.corsOrigin});await connectDatabase();await healthRoutes(app);await authRoutes(app);await workbookRoutes(app);await phase2Routes(app);
+import{phase2Routes}from"./routes/phase2.js";import{feedbackRoutes}from"./routes/feedback.js";
+const app=Fastify({logger:true});await app.register(cors,{origin:config.corsOrigin});await connectDatabase();await healthRoutes(app);await authRoutes(app);await workbookRoutes(app);await phase2Routes(app);await feedbackRoutes(app);
 app.setErrorHandler((error,_,reply)=>{const e=error instanceof Error?error:new Error(String(error));const status=(error as {statusCode?:number}).statusCode??500;reply.code(status).send({code:"INTERNAL_ERROR",message:config.nodeEnv==="production"?"Erro interno do servidor.":e.message})});
 const shutdown=async()=>{await app.close();await closeDatabase()};process.once("SIGTERM",shutdown);process.once("SIGINT",shutdown);await app.listen({port:config.port,host:"0.0.0.0"});

@@ -72,6 +72,11 @@ jobs:
           echo "APK created successfully: $APK"
           ls -lh "$APK"
           sha256sum "$APK"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$AAPT"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | head -n 3
+          echo "$BADGING" | grep -q "package: name='com.korczaktech.nexa'" || { echo "APK package is not com.korczaktech.nexa"; exit 1; }
 
       - name: Rename APK
         run: |

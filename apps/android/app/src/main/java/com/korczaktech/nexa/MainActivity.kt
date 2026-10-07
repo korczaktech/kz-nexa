@@ -1066,33 +1066,95 @@ private fun unmerge(){val s=book!!.sheets[book!!.active];val selected=range(grid
    private inner class FormulaParser(private val src0:String,private val sheet:Sheet,private val seen:MutableSet<String>){
     private val src=src0.trim();private var pos=0
     private fun skip(){while(pos<src.length&&src[pos].isWhitespace())pos++}
-    private fun peek(ch:Char)=run{skip();pos<src.length&&src[pos]==ch}
     private fun eat(ch:Char):Boolean{skip();if(pos<src.length&&src[pos]==ch){pos++;return true};return false}
-    fun parse():String{val v=expr();skip();if(pos!=src.length)throw Exception("syntax");return v.toString()}
-    private fun expr():Double{var v=term();while(true){if(eat('+'))v+=term()else if(eat('-'))v-=term()else return v}}
+    private fun eatText(t:String):Boolean{skip();if(src.regionMatches(pos,t,0,t.length,true)){pos+=t.length;return true};return false}
+    fun parse():String{val v=comparison();skip();if(pos!=src.length)throw Exception("syntax");return formatNumber(v)}
+    private fun comparison():Double{
+      var a=additive()
+      while(true){
+       skip()
+       val op=when{src.startsWith("<>",pos)->"<>";src.startsWith("<=",pos)->"<=";src.startsWith(">=",pos)->">=";src.startsWith("=",pos)->"=";src.startsWith("<",pos)->"<";src.startsWith(">",pos)->">";else->""}
+       if(op.isBlank())return a
+       pos+=op.length
+       val b=additive()
+       a=when(op){"="->if(a==b)1.0 else 0.0;"<>"->if(a!=b)1.0 else 0.0;"<"->if(a<b)1.0 else 0.0;">"->if(a>b)1.0 else 0.0;"<="->if(a<=b)1.0 else 0.0;">="->if(a>=b)1.0 else 0.0;else->0.0}
+      }
+    }
+    private fun additive():Double{var v=term();while(true){if(eat('+'))v+=term()else if(eat('-'))v-=term()else return v}}
     private fun term():Double{var v=power();while(true){if(eat('*'))v*=power()else if(eat('/')){val d=power();if(d==0.0)throw Exception("DIV0");v/=d}else return v}}
     private fun power():Double{var v=unary();if(eat('^'))v=Math.pow(v,power());return v}
     private fun unary():Double{if(eat('+'))return unary();if(eat('-'))return -unary();return primary()}
     private fun primary():Double{
-     skip();if(eat('(')){val v=expr();if(!eat(')'))throw Exception("paren");return v}
-     val start=pos;while(pos<src.length&&!src[pos].isWhitespace()&&!"+-*/%^(),".contains(src[pos]))pos++
-     if(start==pos)throw Exception("token");val token=src.substring(start,pos)
-     if(token.replace(",",".").toDoubleOrNull()!=null)return token.replace(",",".").toDouble()
      skip()
-     if(pos<src.length&&src[pos]=='('){
-      pos++;val args=mutableListOf<String>();var depth=0;var last=pos
-      while(pos<src.length){when(src[pos]){'('->{depth++};')'->{if(depth==0){if(pos>last)args.add(src.substring(last,pos));pos++;break}else depth--};','->{if(depth==0){args.add(src.substring(last,pos));last=pos+1}}};pos++}
-      val fn=token.uppercase();if(fn !in setOf("SUM","AVERAGE","MIN","MAX","COUNT"))throw Exception("function")
-      val vals=args.flatMap{argumentValues(it)};val nums=vals.mapNotNull{it.replace(",",".").toDoubleOrNull()}
-      return when(fn){"SUM"->nums.sum();"AVERAGE"->if(nums.isEmpty())0.0 else nums.average();"MIN"->nums.minOrNull()?:0.0;"MAX"->nums.maxOrNull()?:0.0;"COUNT"->vals.count{it.replace(",",".").toDoubleOrNull()!=null}.toDouble();else->0.0}
-     }
+     if(eat('(')){val v=comparison();if(!eat(')'))throw Exception("paren");return v}
+     if(pos<src.length&&src[pos]=='"'){val s=quoted();return s.replace(",",".").toDoubleOrNull()?:0.0}
+     val start=pos
+     while(pos<src.length&&!src[pos].isWhitespace()&&!"+-*/%^(),<>=:".contains(src[pos]))pos++
+     if(start==pos)throw Exception("token")
+     val token=src.substring(start,pos)
+     val num=token.replace(",",".").toDoubleOrNull()
+     if(num!=null)return num
+     skip()
+     if(pos<src.length&&src[pos]=='(')return function(token)
      return resolve(token)
     }
+    private fun quoted():String{if(!eat('"'))throw Exception("quote");val out=StringBuilder();while(pos<src.length){if(src[pos]=='"'){if(pos+1<src.length&&src[pos+1]=='"'){out.append('"');pos+=2}else{pos++;return out.toString()}}else{out.append(src[pos]);pos++}};throw Exception("quote")}
+    private fun function(name0:String):Double{
+      val name=name0.uppercase();if(!eat('('))throw Exception("function")
+      val args=mutableListOf<String>();var depth=0;var start=pos;var closed=false
+      while(pos<src.length){when(src[pos]){'"'->{pos++;while(pos<src.length&&src[pos]!='"')pos++;if(pos<src.length)pos++};'('->{depth++;pos++};')'->{if(depth==0){if(pos>start)args.add(src.substring(start,pos));pos++;closed=true;break};depth--;pos++};','->{if(depth==0){args.add(src.substring(start,pos));start=pos+1};pos++};else->pos++}}
+      if(!closed)throw Exception("paren")
+      fun arg(i:Int):Double=if(i<args.size)evalArg(args[i]) else 0.0
+      fun vals(i:Int=0):List<String>=args.drop(i).flatMap{argumentValues(it)}
+      return when(name){
+       "SUM"->vals().mapNotNull{it.replace(",",".").toDoubleOrNull()}.sum()
+       "AVERAGE","AVG"->{val n=vals().mapNotNull{it.replace(",",".").toDoubleOrNull()};if(n.isEmpty())0.0 else n.average()}
+       "MIN"->{val n=vals().mapNotNull{it.replace(",",".").toDoubleOrNull()};n.minOrNull()?:0.0}
+       "MAX"->{val n=vals().mapNotNull{it.replace(",",".").toDoubleOrNull()};n.maxOrNull()?:0.0}
+       "COUNT"->vals().count{it.replace(",",".").toDoubleOrNull()!=null}.toDouble()
+       "COUNTA"->vals().count{it.isNotBlank()}.toDouble()
+       "ABS"->kotlin.math.abs(arg(0))
+       "SQRT"->kotlin.math.sqrt(arg(0))
+       "POWER"->Math.pow(arg(0),arg(1))
+       "MOD"->{val b=arg(1);if(b==0.0)throw Exception("DIV0");arg(0)%b}
+       "ROUND"->roundTo(arg(0),arg(1).toInt())
+       "ROUNDUP"->roundDirected(arg(0),arg(1).toInt(),true)
+       "ROUNDDOWN"->roundDirected(arg(0),arg(1).toInt(),false)
+       "INT"->kotlin.math.floor(arg(0))
+       "TRUNC"->roundDirected(arg(0),arg(1).toInt(),false)
+       "IF"->if(arg(0)!=0.0)arg(1)else arg(2)
+       "AND"->if(args.all{evalArg(it)!=0.0})1.0 else 0.0
+       "OR"->if(args.any{evalArg(it)!=0.0})1.0 else 0.0
+       "NOT"->if(arg(0)==0.0)1.0 else 0.0
+       "COUNTIF"->countIf(args)
+       "SUMIF"->sumIf(args)
+       "PRODUCT"->vals().mapNotNull{it.replace(",",".").toDoubleOrNull()}.fold(1.0){a,b->a*b}
+       "MEDIAN"->{val n=vals().mapNotNull{it.replace(",",".").toDoubleOrNull()}.sorted();if(n.isEmpty())0.0 else if(n.size%2==1)n[n.size/2] else (n[n.size/2-1]+n[n.size/2])/2}
+       "LARGE"->{val n=vals(0).mapNotNull{it.replace(",",".").toDoubleOrNull()}.sortedDescending();n.getOrElse(arg(1).toInt()-1){0.0}}
+       "SMALL"->{val n=vals(0).mapNotNull{it.replace(",",".").toDoubleOrNull()}.sorted();n.getOrElse(arg(1).toInt()-1){0.0}}
+       else->throw Exception("function")
+      }
+    }
+    private fun evalArg(arg:String):Double{val t=arg.trim();if(t.startsWith(""")&&t.endsWith("""))return t.substring(1,t.length-1).replace(",",".").toDoubleOrNull()?:0.0;return FormulaParser(t,sheet,seen).parse().replace(",",".").toDoubleOrNull()?:0.0}
+    private fun countIf(args:List<String>):Double{if(args.size<2)throw Exception("args");val values=argumentValues(args[0]);val criteria=criteriaText(args[1]);return values.count{matchesCriteria(it,criteria)}.toDouble()}
+    private fun sumIf(args:List<String>):Double{if(args.size<2)throw Exception("args");val criteriaVals=argumentValues(args[0]);val criteria=criteriaText(args[1]);val sumVals=if(args.size>2)argumentValues(args[2]) else criteriaVals;return criteriaVals.indices.filter{it<sumVals.size&&matchesCriteria(criteriaVals[it],criteria)}.sumOf{sumVals[it].replace(",",".").toDoubleOrNull()?:0.0}}
+    private fun criteriaText(x:String):String{val t=x.trim();return if(t.startsWith(""")&&t.endsWith("""))t.substring(1,t.length-1)else t}
+    private fun matchesCriteria(value:String,c:String):Boolean{
+      val n=value.replace(",",".").toDoubleOrNull();val cn=c.replace(",",".").toDoubleOrNull()
+      if(cn!=null)return n!=null&&n==cn
+      val op=when{c.startsWith(">=")->">=";c.startsWith("<=")->"<=";c.startsWith("<>")->"<>";c.startsWith(">")->">";c.startsWith("<")->"<";c.startsWith("=")->"=";else->"contains"}
+      val rhs=c.removePrefix(">=").removePrefix("<=").removePrefix("<>").removePrefix(">").removePrefix("<").removePrefix("=")
+      val rn=rhs.replace(",",".").toDoubleOrNull()
+      return if(rn!=null&&n!=null)when(op){">="->n>=rn;"<="->n<=rn;"<>"->n!=rn;">"->n>rn;"<"->n<rn;else->n==rn}else when(op){"="->value.equals(rhs,true);"<>"->!value.equals(rhs,true);else->value.contains(rhs,true)}
+    }
+    private fun roundTo(v:Double,d:Int):Double{val p=Math.pow(10.0,d.toDouble());return kotlin.math.round(v*p)/p}
+    private fun roundDirected(v:Double,d:Int,up:Boolean):Double{val p=Math.pow(10.0,d.toDouble());return if(up)kotlin.math.ceil(v*p)/p else kotlin.math.floor(v*p)/p}
+    private fun formatNumber(v:Double):String=if(v.isNaN()||v.isInfinite())v.toString()else if(kotlin.math.abs(v-kotlin.math.round(v))<1e-10)kotlin.math.round(v).toLong().toString()else String.format(Locale.US,"%.10f",v).trimEnd('0').trimEnd('.')
     private fun argumentValues(arg:String):List<String>{val t=arg.trim();val range=t.split(":");if(range.size==2){val a=cellPoint(range[0]);val b=cellPoint(range[1]);val out=mutableListOf<String>();for(r in minOf(a.first,b.first)..maxOf(a.first,b.first))for(c in minOf(a.second,b.second)..maxOf(a.second,b.second))out.add(resolveRaw(sheet,key(r,c)));return out};return listOf(resolveRaw(sheet,t))}
-    private fun resolveRaw(s:Sheet,ref:String):String{val m=Regex("^(?:'((?:[^']|'')+)'|([A-Za-z0-9_ .-]+))!([A-Z]+[0-9]+)$").find(ref);if(m!=null){val name=(m.groupValues[1].ifBlank{m.groupValues[2]}).replace("''","'");val ts=book!!.sheets.firstOrNull{x->x.name==name}?:return "0";return resolveCell(ts,m.groupValues[3].uppercase())};return if(Regex("^[A-Z]+[1-9][0-9]*$",RegexOption.IGNORE_CASE).matches(ref))resolveCell(s,ref.uppercase()) else ref}
-    private fun resolve(ref:String):Double{val raw=resolveRaw(sheet,ref);return raw.replace(",",".").toDoubleOrNull()?:throw Exception("number")}
+    private fun resolveRaw(s:Sheet,ref:String):String{val m=Regex("^(?:'((?:[^']|'')+)'|([A-Za-z0-9_ .-]+))!([A-Z]+[0-9]+)$").find(ref);if(m!=null){val name=(m.groupValues[1].ifBlank{m.groupValues[2]}).replace("''","'");val ts=book!!.sheets.firstOrNull{x->x.name==name}?:throw Exception("REF");return resolveCell(ts,m.groupValues[3].uppercase())};return if(Regex("^[A-Z]+[1-9][0-9]*$",RegexOption.IGNORE_CASE).matches(ref))resolveCell(s,ref.uppercase()) else ref}
+    private fun resolve(ref:String):Double{val raw=resolveRaw(sheet,ref);return raw.replace(",",".").toDoubleOrNull()?:throw Exception("VALUE")}
     private fun resolveCell(s:Sheet,k:String):String{val id=s.id+"!"+k;if(!seen.add(id))throw Exception("CIRCULAR");try{val raw=s.cells[k]?.input?:"0";return if(raw.startsWith("="))eval(raw.substring(1),s,seen)else raw}finally{seen.remove(id)}}
-    private fun cellPoint(k:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(k.trim())?:throw Exception("ref");var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
+    private fun cellPoint(k:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(k.trim())?:throw Exception("REF");var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}
    }
   private fun rangeOverlaps(a:String,b:String):Boolean{fun bounds(x:String):IntArray{val p=x.split(":");val u=parse(p[0]);val v=parse(p.getOrElse(1){p[0]});return intArrayOf(minOf(u.first,v.first),minOf(u.second,v.second),maxOf(u.first,v.first),maxOf(u.second,v.second))};val x=bounds(a);val y=bounds(b);return x[0]<=y[2]&&y[0]<=x[2]&&x[1]<=y[3]&&y[1]<=x[3]}
  private fun parse(x:String):Pair<Int,Int>{val m=Regex("([A-Z]+)([0-9]+)",RegexOption.IGNORE_CASE).find(x.trim())?:throw Exception();var n=0;for(ch in m.groupValues[1].uppercase())n=n*26+ch.code-64;return Pair(m.groupValues[2].toInt()-1,n-1)}

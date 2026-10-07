@@ -400,11 +400,12 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   val scroll=view.findViewById<androidx.core.widget.NestedScrollView>(R.id.scroll)
   val content=scroll.getChildAt(0)
   content?.setBackgroundColor(bg)
+  val contentGroup=content as? ViewGroup
   content?.findViewById<View>(R.id.search)?.background=rounded(surface,border,14f)
   content?.findViewById<TextView>(R.id.featuredName)?.setTextColor(Color.WHITE)
   content?.findViewById<TextView>(R.id.featuredEdited)?.setTextColor(Color.rgb(188,235,208))
   content?.findViewById<TextView>(R.id.btnSeeAll)?.setTextColor(green)
-  (content?.getChildAt(0) as? TextView)?.setTextColor(ink)
+  (contentGroup?.getChildAt(0) as? TextView)?.setTextColor(ink)
   listOf(R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites).forEach{id->content?.findViewById<View>(id)?.let{it.background=rounded(surface,border,16f)}}
   listOf(R.id.shortcutImport,R.id.shortcutOpen,R.id.shortcutFavorites).forEach{id->content?.findViewById<View>(id)?.let{box->if(box is ViewGroup)for(i in 0 until box.childCount){val child=box.getChildAt(i);if(child is TextView)child.setTextColor(ink);if(child is ImageView)child.setColorFilter(green)}}}
   val list=content?.findViewById<LinearLayout>(R.id.listRecents)

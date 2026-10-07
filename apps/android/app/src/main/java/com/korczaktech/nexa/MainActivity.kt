@@ -801,10 +801,13 @@ private fun editorMoreMenu(){nexaBuilder().setTitle("Editor").setItems(arrayOf("
  private var formulaDraftSnap=false
  private fun updateCellFromFormula(v:String){val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val k=key(grid.selStart,grid.selColStart);if(!formulaDraftSnap){snap();formulaDraftSnap=true};if(!valid(v,s.validations[k]))return;if(v.isBlank())s.cells.remove(k)else{s.cells[k]=s.cells[k]?.also{it.input=v}?:Cell(v)};grid.invalidate()}
  private fun commitFormulaEditor(){if(formulaWriting)return;val e=formulaEditor?:return;val s=book?.sheets?.getOrNull(book?.active?:0)?:return;val v=e.text.toString();val k=key(grid.selStart,grid.selColStart);if(v==(s.cells[k]?.input?:"")){formulaDraftSnap=false;return};if(!valid(v,s.validations[k])){showNexaToast("Valor inválido",NexaToastType.ERROR);syncFormulaEditor();formulaDraftSnap=false;return};if(!formulaDraftSnap)snap();formulaDraftSnap=false;if(v.isBlank())s.cells.remove(k)else{s.cells[k]=s.cells[k]?.also{it.input=v}?:Cell(v)};grid.invalidate()}
- private val history=ArrayDeque<String>();private val future=ArrayDeque<String>();private val collapsedRows=mutableSetOf<Int>();private val collapsedCols=mutableSetOf<Int>()
- private fun snap(){history.addLast(toJson(book!!).toString());if(history.size>50)history.removeFirst();future.clear()}
- private fun undo(){if(history.isEmpty()){showNexaToast("Nada para desfazer",NexaToastType.INFO);return};future.addFirst(toJson(book!!).toString());book=from(JSONObject(history.removeLast()));syncFormulaEditor();grid.invalidate()}
- private fun redo(){if(future.isEmpty()){showNexaToast("Nada para refazer",NexaToastType.INFO);return};history.addLast(toJson(book!!).toString());book=from(JSONObject(future.removeFirst()));syncFormulaEditor();grid.invalidate()}
+ private data class EditorHistory(val state:String,val row:Int,val rowEnd:Int,val col:Int,val colEnd:Int)
+ private val history=ArrayDeque<EditorHistory>();private val future=ArrayDeque<EditorHistory>();private val collapsedRows=mutableSetOf<Int>();private val collapsedCols=mutableSetOf<Int>()
+ private fun currentHistoryState():EditorHistory=EditorHistory(toJson(book!!).toString(),grid.selStart,grid.selEnd,grid.selColStart,grid.selColEnd)
+ private fun restoreHistoryState(h:EditorHistory){book=from(JSONObject(h.state));grid.selStart=h.row.coerceAtLeast(0);grid.selEnd=h.rowEnd.coerceAtLeast(grid.selStart);grid.selColStart=h.col.coerceAtLeast(0);grid.selColEnd=h.colEnd.coerceAtLeast(grid.selColStart);syncFormulaEditor();grid.invalidate()}
+ private fun snap(){val h=currentHistoryState();if(history.lastOrNull()?.state!=h.state)history.addLast(h);if(history.size>100)history.removeFirst();future.clear()}
+ private fun undo(){val h=history.removeLastOrNull();if(h==null){showNexaToast("Nada para desfazer",NexaToastType.INFO);return};future.addFirst(currentHistoryState());restoreHistoryState(h)}
+ private fun redo(){val h=future.removeFirstOrNull();if(h==null){showNexaToast("Nada para refazer",NexaToastType.INFO);return};history.addLast(currentHistoryState());restoreHistoryState(h)}
  private fun addSheet(){snap();book!!.sheets.add(Sheet(name="Planilha "+(book!!.sheets.size+1)));book!!.active=book!!.sheets.lastIndex;grid.invalidate()}
  private fun edit(r:Int,c:Int){
  grid.selStart=r;grid.selEnd=r;grid.selColStart=c;grid.selColEnd=c

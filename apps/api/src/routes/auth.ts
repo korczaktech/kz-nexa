@@ -6,11 +6,10 @@ app.post("/v1/auth/login",async(req,res)=>{
  const body=(req.body&&typeof req.body==="object"?req.body:{}) as Record<string,unknown>;
  const email=String(body.email||"").trim().toLowerCase(),password=String(body.password||"");
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<1)return res.code(400).send({code:"INVALID_CREDENTIALS",message:"Informe email e senha."});
- const user=await accountsDb().collection("contas").findOne({Email:email});
+ const user=await accountsDb().collection("contas").findOne({"Autenticacao.Email":email});
  if(!user)return res.code(401).send({code:"INVALID_CREDENTIALS",message:"Email ou senha inválidos."});
- const active=user.Aplicativos?.Nexa?.Ativo===true;
- const hash=typeof user.Aplicativos?.Nexa?.Senha==="string"?user.Aplicativos.Nexa.Senha:"";
- if(!active||!hash||!(await bcrypt.compare(password,hash)))return res.code(401).send({code:"INVALID_CREDENTIALS",message:"Email ou senha inválidos."});
+ const hash=typeof user.Autenticacao?.SenhaHash==="string"?user.Autenticacao.SenhaHash:"";
+ if(!hash||!(await bcrypt.compare(password,hash)))return res.code(401).send({code:"INVALID_CREDENTIALS",message:"Email ou senha inválidos."});
  const id=String(user.id||user._id),name=String(user.Nome||"");
  const token=sign({id,email,name,role:String(user.Conta?.Role||"user")});
  return res.send({token,user:{id,email,name,role:String(user.Conta?.Role||"user")}});

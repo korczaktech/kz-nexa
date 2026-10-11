@@ -368,7 +368,6 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    view.findViewById<TextView>(R.id.avatar).text=initials
    view.findViewById<TextView>(R.id.featuredName).text=book?.name?.ifBlank{"Nova planilha"}?:"Nova planilha"
    view.findViewById<TextView>(R.id.featuredEdited).apply{text="Editado recentemente";setTextColor(Color.rgb(218,255,232))}
-   // The featured card already represents the only current document. Hide the duplicate Recentes row/header.
    val preview=view.findViewById<GridLayout>(R.id.gridPreview)
    preview.removeAllViews()
    val highlighted=setOf(1,4,9,10,17,19)
@@ -386,11 +385,6 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
    row.findViewById<TextView>(R.id.recentName).text=recentBook
    row.findViewById<TextView>(R.id.recentMeta).text="Editado recentemente"
    row.setOnClickListener{editor()};list.addView(row)
-   (list.parent as? ViewGroup)?.let{container->
-    val index=container.indexOfChild(list)
-    if(index>0)container.getChildAt(index-1).visibility=View.GONE
-    list.visibility=View.GONE
-   }
    view.findViewById<View>(R.id.btnRefresh).setOnClickListener{it.animate().rotationBy(360f).setDuration(600).start();load()}
    view.findViewById<View>(R.id.avatar).setOnClickListener{profilePage()}
    view.findViewById<View>(R.id.userName).setOnClickListener{profilePage()}
@@ -424,6 +418,7 @@ private class AuthBackgroundView(context:android.content.Context):View(context){
   val bg=Color.rgb(12,20,16);val surface=Color.rgb(22,31,26);val border=Color.rgb(49,67,57);val ink=Color.rgb(239,248,242);val muted=Color.rgb(166,190,175);val green=Color.rgb(82,232,139)
   view.setBackgroundColor(bg)
   view.findViewById<View>(R.id.header).setBackgroundColor(bg)
+  (view.findViewById<View>(R.id.header) as? ViewGroup)?.getChildAt(1)?.let{title->if(title is TextView)title.setTextColor(ink)}
   view.findViewById<View>(R.id.scroll).setBackgroundColor(bg)
   val scroll=view.findViewById<androidx.core.widget.NestedScrollView>(R.id.scroll)
   val content=scroll.getChildAt(0)
